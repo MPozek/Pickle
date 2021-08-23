@@ -29,8 +29,6 @@ namespace Pickle.Editor
         
             if (_isValidField)
             {
-                _property = property;
-
                 var targetObject = property.serializedObject.targetObject;
                 var targetObjectType = targetObject.GetType();
 
@@ -108,6 +106,9 @@ namespace Pickle.Editor
 
         private void ChangeObject(UnityEngine.Object obj)
         {
+            if (obj == _property.objectReferenceValue)
+                return;
+
             if (typeof(Component).IsAssignableFrom(_fieldType) && obj is GameObject go)
             {
                 obj = go.GetComponent(_fieldType);
@@ -142,6 +143,8 @@ namespace Pickle.Editor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            _property = property;
+
             Initialize(property);
 
             if (!_isValidField)
