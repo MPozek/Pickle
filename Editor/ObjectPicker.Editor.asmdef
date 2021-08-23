@@ -1,0 +1,18 @@
+{
+    "name": "ObjectPicker.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:ffbb120a9a4e71e4798eb7b8de54da41"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
