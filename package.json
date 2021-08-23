@@ -1,0 +1,7 @@
+{
+  "name": "com.mpozek.pickle",
+  "version": "1.0.0",
+  "unity": "2020.3",
+  "displayName":  "Pickle",
+  "description": "A better Object picker for Unity"
+}
