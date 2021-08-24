@@ -91,7 +91,7 @@ namespace Pickle.Editor
                 }
                 else if (pickerType == PickerType.Window)
                 {
-                    _objectPicker = new ObjectPickerWindowDefinition(_property.displayName, objectProvider, _filter);
+                    _objectPicker = new ObjectPickerWindowBuilder(_property.displayName, objectProvider, _filter);
                 }
                 else
                 {

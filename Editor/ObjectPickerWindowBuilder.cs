@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Pickle.Editor
 {
-    public class ObjectPickerWindowDefinition : IObjectPicker
+    public class ObjectPickerWindowBuilder : IObjectPicker
     {
         public event Action<UnityEngine.Object> OnOptionPicked;
 
@@ -12,7 +12,7 @@ namespace Pickle.Editor
         private readonly IObjectProvider _lookupStrategy;
         private readonly Predicate<ObjectTypePair> _filter;
 
-        public ObjectPickerWindowDefinition(string title, IObjectProvider lookupStrategy, Predicate<ObjectTypePair> filter)
+        public ObjectPickerWindowBuilder(string title, IObjectProvider lookupStrategy, Predicate<ObjectTypePair> filter)
         {
             _title = title;
             _lookupStrategy = lookupStrategy;

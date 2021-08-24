@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -9,12 +10,11 @@ namespace Pickle.Editor
 {
     public class ObjectPickerWindow : EditorWindow
     {
-        private const string SEARCH_FIELD_CONTROL_NAME = nameof(ObjectPickerWindow) + "_SearchField";
-
         private static readonly Vector2 DEFAULT_SIZE = new Vector2(700f, 560f);
         private IObjectProvider _lookupStrategy;
         private Action<UnityEngine.Object> _onPickCallback;
         private Predicate<ObjectTypePair> _filter;
+        private SearchField _searchField;
 
         private int _selectedOptionIndex;
         private string _searchString;
@@ -41,9 +41,30 @@ namespace Pickle.Editor
             _selectedOptionIndex = -1;
             _scrollPosition = new Vector2(0f, 0f);
 
+            _searchField = new SearchField();
+            _searchField.autoSetFocusOnFindCommand = true;
+            _searchField.downOrUpArrowKeyPressed += SearchField_downOrUpArrowKeyPressed;
+
             var pos = position;
             pos.size = DEFAULT_SIZE;
             position = pos;
+        }
+
+        private void SearchField_downOrUpArrowKeyPressed()
+        {
+            // which one was it?
+            var ev = Event.current;
+            var isDown = ev.keyCode == KeyCode.DownArrow;
+            Event.current.Use();
+
+            var displayIndexOfCurrentOption = _visibleOptionIndices.IndexOf(_selectedOptionIndex);
+            displayIndexOfCurrentOption += isDown ? 1 : -1;
+
+            // make sure the index is in range
+            displayIndexOfCurrentOption = (displayIndexOfCurrentOption + _visibleOptionIndices.Count) % _visibleOptionIndices.Count;
+            _selectedOptionIndex = _visibleOptionIndices[displayIndexOfCurrentOption];
+
+            Repaint();
         }
 
         private void RefreshList()
@@ -85,11 +106,30 @@ namespace Pickle.Editor
 
         private void OnGUI()
         {
+            // handle enter and escape keys
+            var ev = Event.current;
+            if (ev.type == EventType.KeyDown)
+            {
+                if (ev.keyCode == KeyCode.KeypadEnter || ev.keyCode == KeyCode.Return)
+                {
+                    Event.current.Use();
+                    AcceptSelectionAndClose();
+                    return;
+                }
+                else if (ev.keyCode == KeyCode.Escape)
+                {
+                    Event.current.Use();
+                    Close();
+                    return;
+                }
+            }
+
             // search bar
             EditorGUI.BeginChangeCheck();
-            GUI.SetNextControlName(SEARCH_FIELD_CONTROL_NAME);
-            _searchString = EditorGUILayout.TextField(_searchString, EditorStyles.toolbarSearchField);
-            GUI.FocusControl(SEARCH_FIELD_CONTROL_NAME);
+
+            var searchRect = EditorGUILayout.GetControlRect(false);
+            _searchString = _searchField.OnGUI(searchRect, _searchString);
+            _searchField.SetFocus();
 
             if (EditorGUI.EndChangeCheck())
             {
@@ -122,13 +162,18 @@ namespace Pickle.Editor
             {
                 if (_selectedOptionIndex == optionIndex)
                 {
-                    _onPickCallback?.Invoke(_selectedOptionIndex >= 0 ? _options[_selectedOptionIndex].Object : null);
-                    Close();
+                    AcceptSelectionAndClose();
                     return;
                 }
 
                 _selectedOptionIndex = optionIndex;
             }
+        }
+
+        private void AcceptSelectionAndClose()
+        {
+            _onPickCallback?.Invoke(_selectedOptionIndex >= 0 ? _options[_selectedOptionIndex].Object : null);
+            Close();
         }
 
         private bool DrawSelectableLabel(string text, string tag, bool isSelected, Texture2D icon = null)
