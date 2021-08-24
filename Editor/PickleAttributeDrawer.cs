@@ -42,7 +42,7 @@ namespace Pickle.Editor
 
                 var attribute = (PickleAttribute)this.attribute;
                 IObjectProvider objectProvider;
-                PickerType pickerType = PickerType.Dropdown;
+                PickerType pickerType = PickleSettings.GetDefaultPickerType(_fieldType);
 
                 if (attribute != null)
                 {
@@ -91,7 +91,7 @@ namespace Pickle.Editor
                 }
                 else if (pickerType == PickerType.Window)
                 {
-                    _objectPicker = new ObjectPickerWindowDefinition(_property.displayName, objectProvider, _filter);
+                    _objectPicker = new ObjectPickerWindowBuilder(_property.displayName, objectProvider, _filter);
                 }
                 else
                 {
