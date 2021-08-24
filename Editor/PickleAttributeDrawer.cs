@@ -29,8 +29,6 @@ namespace Pickle.Editor
         
             if (_isValidField)
             {
-                _property = property;
-
                 var targetObject = property.serializedObject.targetObject;
                 var targetObjectType = targetObject.GetType();
 
@@ -39,8 +37,6 @@ namespace Pickle.Editor
 
                 _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, _fieldType);
                 _objectFieldDrawer.OnObjectPickerButtonClicked += OpenObjectPicker;
-
-                //_dropdown = new CustomObjectPickerDropdown(new SceneComponentLookupStrategy(((Component)targetObject).gameObject.scene, _fieldType), new AdvancedDropdownState());
 
                 _filter = null;
 
@@ -82,7 +78,7 @@ namespace Pickle.Editor
                 }
                 else
                 {
-                    objectProvider = ObjectProviderUtilities.GetDefaultObjectProviderForType(_fieldType, targetObject);
+                    objectProvider = ObjectProviderUtilities.GetDefaultObjectProviderForType(_fieldType, targetObject, true);
                 }
                 
                 if (pickerType == PickerType.Dropdown)
@@ -108,6 +104,9 @@ namespace Pickle.Editor
 
         private void ChangeObject(UnityEngine.Object obj)
         {
+            if (obj == _property.objectReferenceValue)
+                return;
+
             if (typeof(Component).IsAssignableFrom(_fieldType) && obj is GameObject go)
             {
                 obj = go.GetComponent(_fieldType);
@@ -142,12 +141,13 @@ namespace Pickle.Editor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            _property = property;
+
             Initialize(property);
 
             if (!_isValidField)
             {
                 EditorGUI.PropertyField(position, property, label, true);
-                //base.OnGUI(position, property, label);
                 return;
             }
 
@@ -158,16 +158,16 @@ namespace Pickle.Editor
 
         private static System.Type ExtractTypeFromPropertyPath(System.Type baseType, string relativePath, int pathStartIndex = 0)
         {
-            var fields = baseType.GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
             var dotIndex = relativePath.IndexOf('.', pathStartIndex);
 
             if (dotIndex < 0)
             {
                 // we're almost there
-                var field = System.Array.Find(fields, (field) => field.Name == relativePath.Substring(pathStartIndex));
+                var field = ReflectionUtilities.ResolveFieldFromName(baseType, relativePath.Substring(pathStartIndex));
                 if (field == null)
                 {
-                    Debug.LogError("Couldn't find end field with name " + relativePath.Substring(pathStartIndex));
+                    Debug.LogError($"Couldn't find end field with name {relativePath.Substring(pathStartIndex)} full path is {relativePath}");
+
                     return null;
                 }
                 return field.FieldType;
@@ -187,6 +187,7 @@ namespace Pickle.Editor
 
                     dotIndex = relativePath.IndexOf('.', dotIndex + 1);
 
+                    // arrays will return for GetElementType, Lists will not, so we grab the first generic argument
                     var elementType = baseType.IsArray ? baseType.GetElementType() : baseType.GetGenericArguments()[0];
 
                     if (dotIndex < 0)
@@ -200,7 +201,7 @@ namespace Pickle.Editor
                 }
                 else
                 {
-                    var field = System.Array.Find(fields, (field) => field.Name == nextPathPart);
+                    var field = ReflectionUtilities.ResolveFieldFromName(baseType, relativePath.Substring(pathStartIndex));
 
                     if (field == null)
                     {
