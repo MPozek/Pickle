@@ -6,7 +6,11 @@ namespace Pickle.ObjectProviders
 {
     public static class ObjectProviderUtilities
     {
-        public static IObjectProvider ResolveProviderTypeToProvider(this ObjectProviderType providerType, System.Type fieldType, UnityEngine.Object owner = null)
+        public static IObjectProvider ResolveProviderTypeToProvider(
+            this ObjectProviderType providerType, 
+            System.Type fieldType, 
+            UnityEngine.Object owner = null,
+            bool allowPackages = true)
         {
             List<IObjectProvider> strategiesForUnion = new List<IObjectProvider>();
 
@@ -28,11 +32,11 @@ namespace Pickle.ObjectProviders
             {
                 if (isFieldTypeAComponent)
                 {
-                    strategiesForUnion.Add(new PrefabComponentObjectProvider(fieldType));
+                    strategiesForUnion.Add(new PrefabComponentObjectProvider(fieldType, allowPackages));
                 }
                 else
                 {
-                    strategiesForUnion.Add(new AssetObjectProvider(fieldType));
+                    strategiesForUnion.Add(new AssetObjectProvider(fieldType, null, allowPackages));
                 }
             }
 
@@ -66,9 +70,9 @@ namespace Pickle.ObjectProviders
             return new ObjectProviderUnion(strategiesForUnion.ToArray());
         }
 
-        public static IObjectProvider GetDefaultObjectProviderForType(System.Type fieldType, UnityEngine.Object owner = null)
+        public static IObjectProvider GetDefaultObjectProviderForType(System.Type fieldType, UnityEngine.Object owner = null, bool allowPackages = false)
         {
-            return (ObjectProviderType.Assets | ObjectProviderType.Scene).ResolveProviderTypeToProvider(fieldType, owner);
+            return (ObjectProviderType.Assets | ObjectProviderType.Scene).ResolveProviderTypeToProvider(fieldType, owner, allowPackages);
         }
     }
 }
