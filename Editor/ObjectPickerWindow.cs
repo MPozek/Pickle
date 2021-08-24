@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Pickle.Editor
 {
+
     public class ObjectPickerWindow : EditorWindow
     {
         private static readonly Vector2 DEFAULT_SIZE = new Vector2(700f, 560f);
