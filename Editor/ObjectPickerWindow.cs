@@ -25,10 +25,16 @@ namespace Pickle.Editor
         private List<int> _visibleOptionIndices = new List<int>();
         private bool _drawAsAList;
 
-        public static void OpenCustomPicker(string title, Action<UnityEngine.Object> onPick, IObjectProvider lookupStrategy, Predicate<ObjectTypePair> filter, UnityEngine.Object selectedObject = null)
+        public static void OpenCustomPicker(
+            string title, 
+            Action<UnityEngine.Object> onPick, 
+            IObjectProvider lookupStrategy, 
+            Predicate<ObjectTypePair> filter, 
+            UnityEngine.Object selectedObject = null)
         {
             var picker = GetWindow<ObjectPickerWindow>(true, title);
 
+            picker._drawAsAList = false;
             picker._lookupStrategy = lookupStrategy;
             picker._onPickCallback = onPick;
             picker._filter = filter;
@@ -135,9 +141,30 @@ namespace Pickle.Editor
             // search bar
             EditorGUI.BeginChangeCheck();
 
-            var searchRect = EditorGUILayout.GetControlRect(false);
+            var toolbarRect = EditorGUILayout.GetControlRect(false);
+
+            var searchRect = toolbarRect;
+            searchRect.width -= 150f;
+
             _searchString = _searchField.OnGUI(searchRect, _searchString);
             _searchField.SetFocus();
+
+            var buttonsRect = toolbarRect;
+            buttonsRect.width = 100f;
+            buttonsRect.center += Vector2.right * (searchRect.width + 50f);
+
+            var leftButton = buttonsRect; leftButton.width *= 0.5f;
+            var rightButton = leftButton; rightButton.center += Vector2.right * rightButton.width;
+
+            if (GUI.Toggle(leftButton, _drawAsAList, "list", EditorStyles.miniButtonLeft) != _drawAsAList)
+            {
+                _drawAsAList = true;
+            }
+
+            if (GUI.Toggle(rightButton, !_drawAsAList, "grid", EditorStyles.miniButtonRight) == _drawAsAList)
+            {
+                _drawAsAList = false;
+            }
 
             if (EditorGUI.EndChangeCheck())
             {
@@ -218,9 +245,7 @@ namespace Pickle.Editor
                 _selectedOptionIndex = optionIndex;
             }
 
-            var labelStyle = new GUIStyle(EditorStyles.centeredGreyMiniLabel);
-            labelStyle.normal.textColor = Color.white;
-            labelStyle = (GUIStyle)"GridListText";
+            var labelStyle = (GUIStyle)"GridListText";
 
             EditorGUI.Toggle(tileRect, GUIContent.none, _selectedOptionIndex == optionIndex, labelStyle);
             if (optionIndex >= 0)
@@ -277,6 +302,8 @@ namespace Pickle.Editor
 
         private bool DrawSelectableLabel(string text, string tag, bool isSelected, Texture2D icon = null)
         {
+            var labelStyle = (GUIStyle)"GridListText";
+
             bool result = false;
             var r = EditorGUILayout.GetControlRect(GUILayout.ExpandWidth(true));
 
@@ -285,10 +312,7 @@ namespace Pickle.Editor
                 result = true;
             }
 
-            if (isSelected)
-            {
-                EditorGUI.DrawRect(r, new Color32(44, 93, 135, 255));
-            }
+            EditorGUI.Toggle(r, isSelected, labelStyle);
 
             float indentation = r.height;
             r.xMin += indentation;
