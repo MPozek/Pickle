@@ -201,7 +201,7 @@ namespace Pickle.Editor
                 }
                 else
                 {
-                    var field = ReflectionUtilities.ResolveFieldFromName(baseType, relativePath.Substring(pathStartIndex));
+                    var field = ReflectionUtilities.ResolveFieldFromName(baseType, nextPathPart);
 
                     if (field == null)
                     {
