@@ -74,7 +74,8 @@ namespace Pickle.Editor
                     continue;
 
                 var item = new AdvancedDropdownItem(cur.Object.name);
-                item.icon = AssetPreview.GetMiniTypeThumbnail(cur.Object.GetType());
+                item.icon = AssetPreview.GetMiniThumbnail(cur.Object);
+                //item.icon = AssetPreview.GetMiniTypeThumbnail(cur.Object.GetType());
                 item.id = _objects.Count;
                 if (cur.Type == ObjectSourceType.Asset)
                 {
