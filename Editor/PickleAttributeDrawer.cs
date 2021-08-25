@@ -128,7 +128,10 @@ namespace Pickle.Editor
         {
             if (typeof(Component).IsAssignableFrom(_fieldType) && obj is GameObject go)
             {
-                obj = go.GetComponent(_fieldType);
+                if (!go.TryGetComponent(_fieldType, out var component))
+                    return false;
+
+                obj = component;
             }
 
             return _fieldType.IsAssignableFrom(obj.GetType()) && (_filter == null || _filter.Invoke(ObjectTypePair.EDITOR_ConstructPairFromObject(obj)));

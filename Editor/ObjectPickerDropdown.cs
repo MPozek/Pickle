@@ -106,17 +106,6 @@ namespace Pickle.Editor
                 root.name = Title;
             }
 
-            /*
-            if (sceneCount != 0)
-            {
-                root.AddChild(scene);
-            }
-
-            if (assetsCount != 0)
-            {
-                root.AddChild(assets);
-            }*/
-
             return root;
         }
     }
