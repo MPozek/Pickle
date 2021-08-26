@@ -35,6 +35,12 @@ namespace Pickle.Editor
                 // find the field type
                 _fieldType = ExtractTypeFromPropertyPath(targetObjectType, property.propertyPath);
 
+                if (_fieldType == null)
+                {
+                    _isValidField = false;
+                    return;
+                }
+
                 _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, _fieldType);
                 _objectFieldDrawer.OnObjectPickerButtonClicked += OpenObjectPicker;
 
@@ -169,7 +175,7 @@ namespace Pickle.Editor
                 var field = ReflectionUtilities.ResolveFieldFromName(baseType, relativePath.Substring(pathStartIndex));
                 if (field == null)
                 {
-                    Debug.LogError($"Couldn't find end field with name {relativePath.Substring(pathStartIndex)} full path is {relativePath}");
+                    //Debug.LogError($"Couldn't find end field with name {relativePath.Substring(pathStartIndex)} full path is {relativePath}");
 
                     return null;
                 }
