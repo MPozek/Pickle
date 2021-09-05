@@ -1,7 +1,10 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Pickle
 {
+
+    [AttributeUsage(AttributeTargets.Field)]
     public class PickleAttribute : PropertyAttribute
     {
         public ObjectProviderType LookupType = ObjectProviderType.Assets | ObjectProviderType.Scene;

@@ -14,7 +14,7 @@ namespace Pickle.Editor
 
         private static GUIContent DefaultObjectLabelGetter(UnityEngine.Object obj, Type type)
         {
-            return obj ? new GUIContent(obj.name, AssetPreview.GetMiniThumbnail(obj)) : new GUIContent($"None ({type.Name})");
+            return obj ? new GUIContent(obj.ToString(), AssetPreview.GetMiniThumbnail(obj)) : new GUIContent($"None ({type.Name})");
         }
 
         public ObjectFieldDrawer(Predicate<UnityEngine.Object> isObjectValidForField, Func<UnityEngine.Object, GUIContent> objectLabelGetter)
