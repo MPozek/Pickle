@@ -73,7 +73,7 @@ namespace Pickle.Editor
                 if (_filter != null && !_filter.Invoke(cur))
                     continue;
 
-                var item = new AdvancedDropdownItem(cur.Object.name);
+                var item = new AdvancedDropdownItem(cur.Object.ToString());
                 item.icon = AssetPreview.GetMiniThumbnail(cur.Object);
                 //item.icon = AssetPreview.GetMiniTypeThumbnail(cur.Object.GetType());
                 item.id = _objects.Count;
@@ -105,17 +105,6 @@ namespace Pickle.Editor
                 root = assets;
                 root.name = Title;
             }
-
-            /*
-            if (sceneCount != 0)
-            {
-                root.AddChild(scene);
-            }
-
-            if (assetsCount != 0)
-            {
-                root.AddChild(assets);
-            }*/
 
             return root;
         }

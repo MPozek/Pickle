@@ -105,7 +105,7 @@ namespace Pickle.Editor
             for (int i = 0; i < _options.Count; i++)
             {
                 UnityEngine.Object obj = _options[i].Object;
-                if (!hasSearchString || obj.name.ToLowerInvariant().Contains(_searchString.ToLowerInvariant()))
+                if (!hasSearchString || obj.ToString().ToLowerInvariant().Contains(_searchString.ToLowerInvariant()))
                 {
                     _visibleOptionIndices.Add(i);
                 }
@@ -268,7 +268,7 @@ namespace Pickle.Editor
                 labelRect.height = tileRect.height - imageRect.height;
                 labelRect.center += Vector2.up * imageRect.height;
 
-                EditorGUI.LabelField(tileRect, option.Object.name, labelStyle);
+                EditorGUI.LabelField(tileRect, option.Object.ToString(), labelStyle);
             }
             else
             {
@@ -283,7 +283,7 @@ namespace Pickle.Editor
         {
             var obj = optionIndex >= 0 ? _options[optionIndex].Object : null;
 
-            string name = optionIndex >= 0 ? _options[optionIndex].Object.name : "None";
+            string name = optionIndex >= 0 ? _options[optionIndex].Object.ToString() : "None";
             string tag = optionIndex >= 0 ? _options[optionIndex].Type.ToString() : "";
 
             var previewTexture = obj == null ? null : AssetPreview.GetMiniThumbnail(obj);

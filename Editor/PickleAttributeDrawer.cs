@@ -33,7 +33,13 @@ namespace Pickle.Editor
                 var targetObjectType = targetObject.GetType();
 
                 // find the field type
-                _fieldType = ExtractTypeFromPropertyPath(targetObjectType, property.propertyPath);
+                _fieldType = ReflectionUtilities.ExtractTypeFromPropertyPath(targetObject, targetObjectType, property.propertyPath);
+
+                if (_fieldType == null)
+                {
+                    _isValidField = false;
+                    return;
+                }
 
                 _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, _fieldType);
                 _objectFieldDrawer.OnObjectPickerButtonClicked += OpenObjectPicker;
@@ -128,7 +134,10 @@ namespace Pickle.Editor
         {
             if (typeof(Component).IsAssignableFrom(_fieldType) && obj is GameObject go)
             {
-                obj = go.GetComponent(_fieldType);
+                if (!go.TryGetComponent(_fieldType, out var component))
+                    return false;
+
+                obj = component;
             }
 
             return _fieldType.IsAssignableFrom(obj.GetType()) && (_filter == null || _filter.Invoke(ObjectTypePair.EDITOR_ConstructPairFromObject(obj)));
@@ -153,65 +162,6 @@ namespace Pickle.Editor
 
             var newReference = _objectFieldDrawer.Draw(position, label, property.objectReferenceValue);
             ChangeObject(newReference);
-        }
-
-
-        private static System.Type ExtractTypeFromPropertyPath(System.Type baseType, string relativePath, int pathStartIndex = 0)
-        {
-            var dotIndex = relativePath.IndexOf('.', pathStartIndex);
-
-            if (dotIndex < 0)
-            {
-                // we're almost there
-                var field = ReflectionUtilities.ResolveFieldFromName(baseType, relativePath.Substring(pathStartIndex));
-                if (field == null)
-                {
-                    Debug.LogError($"Couldn't find end field with name {relativePath.Substring(pathStartIndex)} full path is {relativePath}");
-
-                    return null;
-                }
-                return field.FieldType;
-            }
-            else
-            {
-                var nextPathPart = relativePath.Substring(pathStartIndex, dotIndex - pathStartIndex);
-
-                if (nextPathPart == "Array")
-                {
-                    // now we need to handle this stupid special case, the current baseType is a collection
-                    // might be an array, might be a list or something, we can try to extract it's generic attribute,
-                    // but we need to move the start index to after the format
-                    // the format in front is:
-                    // data[someIntHere].restOfThePath
-                    // so we can find the next dot and skip it basically
-
-                    dotIndex = relativePath.IndexOf('.', dotIndex + 1);
-
-                    // arrays will return for GetElementType, Lists will not, so we grab the first generic argument
-                    var elementType = baseType.IsArray ? baseType.GetElementType() : baseType.GetGenericArguments()[0];
-
-                    if (dotIndex < 0)
-                    {
-                        return elementType;
-                    }
-                    else
-                    {
-                        return ExtractTypeFromPropertyPath(elementType, relativePath, dotIndex + 1);
-                    }
-                }
-                else
-                {
-                    var field = ReflectionUtilities.ResolveFieldFromName(baseType, nextPathPart);
-
-                    if (field == null)
-                    {
-                        Debug.LogError("Couldn't find field with name " + nextPathPart + " on type " + baseType);
-                        return null;
-                    }
-
-                    return ExtractTypeFromPropertyPath(field.FieldType, relativePath, dotIndex + 1);
-                }
-            }
         }
     }
 }
