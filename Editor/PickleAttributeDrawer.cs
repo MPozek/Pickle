@@ -3,6 +3,7 @@ using UnityEditor.IMGUI.Controls;
 using UnityEditor;
 using UnityEngine;
 using Pickle.ObjectProviders;
+using System.Collections;
 
 namespace Pickle.Editor
 {
@@ -33,7 +34,7 @@ namespace Pickle.Editor
                 var targetObjectType = targetObject.GetType();
 
                 // find the field type
-                _fieldType = ReflectionUtilities.ExtractTypeFromPropertyPath(targetObject, targetObjectType, property.propertyPath);
+                _fieldType = ExtractFieldType(fieldInfo);
 
                 if (_fieldType == null)
                 {
@@ -106,6 +107,22 @@ namespace Pickle.Editor
 
                 _objectPicker.OnOptionPicked += ChangeObject;
             }
+        }
+
+        private Type ExtractFieldType(System.Reflection.FieldInfo fieldInfo)
+        {
+            if (fieldInfo == null)
+                return null;
+
+            var fieldType = fieldInfo.FieldType;
+
+            if (fieldType.IsArray)
+                return fieldType.GetElementType();
+            
+            if (typeof(IList).IsAssignableFrom(fieldType))
+                return fieldType.GetGenericArguments()[0];
+
+            return fieldInfo.FieldType;
         }
 
         private void ChangeObject(UnityEngine.Object obj)

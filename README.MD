@@ -47,10 +47,16 @@ public List<Rigidbody2D> RigidbodyList;
 // narrow down the allowed objects on the field, the default is both assets and scene
 [Pickle(LookupType = ObjectProviderType.Scene)]
 public Rigidbody2D OnlySceneObjects;
+
 [Pickle(LookupType = ObjectProviderType.Assets)]
 public Rigidbody2D OnlyPrefabs;
+
 [Pickle(LookupType = ObjectProviderType.Children)]
 public Rigidbody2D OnlyChildrenOfThisObject;
+
+[Pickle(LookupType = ObjectProviderType.RootChildren)]
+public Rigidbody2D OnlyChildrenOfTheRootOfThisObject;
+
 [Pickle(LookupType = ObjectProviderType.Assets | ObjectProviderType.Scene)]
 public Rigidbody2D AnyAssetOrSceneObject;
 

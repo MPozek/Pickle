@@ -42,18 +42,6 @@ namespace Pickle.ObjectProviders
 
             if (ownerGameObject && isFieldTypeASceneObject)
             {
-                if ((providerType & ObjectProviderType.Children) != 0)
-                {
-                    if (isFieldTypeAComponent)
-                    {
-                        strategiesForUnion.Add(new ChildComponentsProvider(ownerGameObject.transform, fieldType));
-                    }
-                    else
-                    {
-                        strategiesForUnion.Add(new ChildObjectsProvider(ownerGameObject.transform));
-                    }
-                }
-
                 if ((providerType & ObjectProviderType.Scene) != 0)
                 {
                     if (isFieldTypeAComponent)
@@ -63,6 +51,31 @@ namespace Pickle.ObjectProviders
                     else
                     {
                         strategiesForUnion.Add(new SceneObjectsProvider(ownerGameObject.scene));
+                    }
+                }
+                else
+                {
+                    if ((providerType & ObjectProviderType.RootChildren) != 0)
+                    {
+                        if (isFieldTypeAComponent)
+                        {
+                            strategiesForUnion.Add(new RootChildrenComponentsProvider(ownerGameObject.transform, fieldType));
+                        }
+                        else
+                        {
+                            strategiesForUnion.Add(new RootChildrenObjectsProvider(ownerGameObject.transform));
+                        }
+                    }
+                    else if ((providerType & ObjectProviderType.Children) != 0)
+                    {
+                        if (isFieldTypeAComponent)
+                        {
+                            strategiesForUnion.Add(new ChildComponentsProvider(ownerGameObject.transform, fieldType));
+                        }
+                        else
+                        {
+                            strategiesForUnion.Add(new ChildObjectsProvider(ownerGameObject.transform));
+                        }
                     }
                 }
             }
