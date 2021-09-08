@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace Pickle.ObjectProviders
 {
+
     public class ChildComponentsProvider : IObjectProvider
     {
         private Transform _parent;
