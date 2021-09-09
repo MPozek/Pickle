@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Pickle.ObjectProviders
 {
@@ -20,6 +23,7 @@ namespace Pickle.ObjectProviders
 
         public IEnumerator<ObjectTypePair> Lookup()
         {
+#if UNITY_EDITOR
             var guids = AssetDatabase.FindAssets($"t:{_type.Name}");
             foreach (var guid in guids)
             {
@@ -35,6 +39,9 @@ namespace Pickle.ObjectProviders
                     yield return new ObjectTypePair { Object = asset, Type = ObjectSourceType.Asset };
                 }
             }
+#else
+            return null;
+#endif
         }
     }
 }

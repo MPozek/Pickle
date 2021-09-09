@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Pickle.ObjectProviders
 {
@@ -17,6 +20,7 @@ namespace Pickle.ObjectProviders
 
         public IEnumerator<ObjectTypePair> Lookup()
         {
+#if UNITY_EDITOR
             var guids = AssetDatabase.FindAssets($"t:prefab");
             foreach (var guid in guids)
             {
@@ -30,6 +34,9 @@ namespace Pickle.ObjectProviders
                 if (asset.TryGetComponent(_type, out var prefabComponent))
                     yield return new ObjectTypePair { Object = prefabComponent, Type = ObjectSourceType.Asset };
             }
+#else
+            return null;
+#endif
         }
     }
 }
