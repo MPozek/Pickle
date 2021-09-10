@@ -208,7 +208,7 @@ namespace Pickle.Editor
             var width = position.width;
             var columnCount = Mathf.FloorToInt(width / GRID_TILE_SIZE_MIN);
             var tileWidth = width / columnCount;
-            var tileHeight = tileWidth + EditorGUIUtility.singleLineHeight;
+            var tileHeight = tileWidth + EditorGUIUtility.singleLineHeight * 2f;
 
             var rows = Mathf.CeilToInt(_visibleOptionIndices.Count * 1f / columnCount);
             var height = rows * tileHeight;
@@ -246,6 +246,8 @@ namespace Pickle.Editor
             }
 
             var labelStyle = (GUIStyle)"GridListText";
+            labelStyle.wordWrap = true;
+            labelStyle.alignment = TextAnchor.UpperCenter;
 
             EditorGUI.Toggle(tileRect, GUIContent.none, _selectedOptionIndex == optionIndex, labelStyle);
             if (optionIndex >= 0)
@@ -268,7 +270,7 @@ namespace Pickle.Editor
                 labelRect.height = tileRect.height - imageRect.height;
                 labelRect.center += Vector2.up * imageRect.height;
 
-                EditorGUI.LabelField(tileRect, option.Object.ToString(), labelStyle);
+                EditorGUI.LabelField(labelRect, option.Object.ToString(), labelStyle);
             }
             else
             {
