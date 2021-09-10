@@ -13,6 +13,8 @@ namespace Pickle.Editor
     [CustomPropertyDrawer(typeof(PickleAttribute))]
     public class PickleAttributeDrawer : PropertyDrawer
     {
+        private const float AUTO_PICK_BUTTON_WIDTH = 20f;
+
         private bool _isInitialized;
         private bool _isValidField;
         private Type _fieldType;
@@ -20,6 +22,7 @@ namespace Pickle.Editor
         private IObjectPicker _objectPicker;
         private SerializedProperty _property;
         private Predicate<ObjectTypePair> _filter;
+        private AutoPickMode _autoPickMode;
 
         private void Initialize(SerializedProperty property)
         {
@@ -51,7 +54,7 @@ namespace Pickle.Editor
                 IObjectProvider objectProvider;
                 PickerType pickerType = PickleSettings.GetDefaultPickerType(_fieldType);
 
-                if (attribute != null)
+                if (base.attribute != null)
                 {
                     objectProvider = attribute.LookupType.ResolveProviderTypeToProvider(_fieldType, targetObject);
 
@@ -82,6 +85,9 @@ namespace Pickle.Editor
                     }
 
                     pickerType = attribute.PickerType;
+
+                    // TODO :: CHECK IF VALID FOR BASE OBJECT
+                    _autoPickMode = attribute.AutoPickMode;
                 }
                 else
                 {
@@ -175,6 +181,17 @@ namespace Pickle.Editor
             {
                 EditorGUI.PropertyField(position, property, label, true);
                 return;
+            }
+
+            if (_autoPickMode != AutoPickMode.None)
+            {
+                var buttonRect = Rect.MinMaxRect(position.xMax - AUTO_PICK_BUTTON_WIDTH, position.yMin, position.xMax, position.yMax);
+                position.width -= AUTO_PICK_BUTTON_WIDTH;
+
+                if (GUI.Button(buttonRect, "A"))
+                {
+                    ChangeObject(_autoPickMode.DoAutoPick(_property.serializedObject.targetObject, _fieldType));        
+                }
             }
 
             var newReference = _objectFieldDrawer.Draw(position, label, property.objectReferenceValue);
