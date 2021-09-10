@@ -1,11 +1,17 @@
 # Pickle
+[![openupm](https://img.shields.io/npm/v/com.mpozek.pickle?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.mpozek.pickle/)
+
 A better Object picking solution for Unity.
 ![pickle_usage](https://user-images.githubusercontent.com/15526815/130478936-3b22a37b-3c9e-405d-8d79-df068852cdf6.gif)
 
 ## What is Pickle?
 Pickle is a collection of Editor scripts and Attributes that aim to replicate and extend the behaviour of the default UnityEngine.Object picker.
 
-## Instalation
+## Installation
+Using OpenUPM CLI:
+`openupm add com.mpozek.pickle`
+
+Or manually:
 1. open the Unity Package Manager (Windows/Package Manager)
 2. click the add package button and choose the "add package from git URL" option
 
