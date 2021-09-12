@@ -11,6 +11,7 @@ namespace Pickle
         public PickerType PickerType = PickerType.Dropdown;
         public string FilterMethodName = null;
         public AutoPickMode AutoPickMode = AutoPickMode.None;
+        public Type FilterType = null;
     }
 
     public enum PickerType
