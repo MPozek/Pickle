@@ -4,7 +4,6 @@ using UnityEditor;
 using UnityEngine;
 using Pickle.ObjectProviders;
 using System.Collections;
-using System.Runtime.CompilerServices;
 
 namespace Pickle.Editor
 {
