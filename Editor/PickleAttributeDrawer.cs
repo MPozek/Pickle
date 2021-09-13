@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using Pickle.ObjectProviders;
 using System.Collections;
+using System.Runtime.CompilerServices;
 
 namespace Pickle.Editor
 {
@@ -59,7 +60,11 @@ namespace Pickle.Editor
                 {
                     if (attribute.FilterType != null)
                     {
-                        _filter = pair => (pair.Object as Component)?.GetComponent(attribute.FilterType);
+                        _filter = pair =>
+                        {
+                            Type componentType = pair.Object.GetType();
+                            return attribute.FilterType.IsAssignableFrom(componentType);
+                        };
                     }
                     
                     objectProvider = attribute.LookupType.ResolveProviderTypeToProvider(_fieldType, targetObject);
