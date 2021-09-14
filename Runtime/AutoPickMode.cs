@@ -5,7 +5,13 @@ namespace Pickle
 {
     public enum AutoPickMode
     {
-        None, GetComponent, GetComponentInChildren, FindObject, GetComponentInParent
+        None = 0, 
+        GetComponent = 1, 
+        GetComponentInChildren = 2, 
+        FindObject = 3, 
+        GetComponentInParent = 4,
+
+        Default = -1,
     }
 
     public static class AutoPickExtensions
