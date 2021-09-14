@@ -50,12 +50,13 @@ namespace Pickle.Editor
 
                 _filter = null;
 
-                var attribute = (PickleAttribute)this.attribute;
                 IObjectProvider objectProvider;
                 PickerType pickerType = PickleSettings.GetDefaultPickerType(_fieldType);
 
                 if (base.attribute != null)
                 {
+                    var attribute = (PickleAttribute)this.attribute;
+
                     objectProvider = attribute.LookupType.ResolveProviderTypeToProvider(_fieldType, targetObject);
 
                     if (!string.IsNullOrEmpty(attribute.FilterMethodName))
