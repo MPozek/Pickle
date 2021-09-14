@@ -102,7 +102,6 @@ namespace Pickle.Editor
                 EditorGUILayout.PropertyField(_defaultToWindowTypesProp);
 
                 DrawScriptingDefineToggles();
-                DrawScriptingDefineToggles();
             }
 
             private void DrawScriptingDefineToggles()
@@ -111,17 +110,15 @@ namespace Pickle.Editor
 
                 PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup, out var defines);
 
-
-
                 DrawDefineToggle(PICKLE_IS_DEFAULT, defines, "Set Pickle as default picker", "Unset Pickle as default picker");
                 DrawDefineToggle(PICKLE_IN_ROOT_NAMESPACE, defines, "Move attribute to default namespace", "Move attribute to Pickle namespace");
             }
 
             private void DrawDefineToggle(string defineString, string[] defines, string positiveLabel, string negativeLabel)
             {
-                var pickleDefineIndex = System.Array.IndexOf(defines, defineString);
-                var isPickleDefault = pickleDefineIndex >= 0;
-                var toggleButtonLabel = isPickleDefault ? negativeLabel : positiveLabel;
+                var defineIndex = System.Array.IndexOf(defines, defineString);
+                var isSymbolSet = defineIndex >= 0;
+                var toggleButtonLabel = isSymbolSet ? negativeLabel : positiveLabel;
 
                 var buttonStyle = (GUIStyle)"AC Button";
                 var size = buttonStyle.CalcSize(new GUIContent(toggleButtonLabel));
@@ -136,15 +133,15 @@ namespace Pickle.Editor
 
                 if (GUI.Button(buttonRect, toggleButtonLabel, buttonStyle))
                 {
-                    if (isPickleDefault)
+                    if (isSymbolSet)
                     {
-                        defines[pickleDefineIndex] = defines[defines.Length - 1];
+                        defines[defineIndex] = defines[defines.Length - 1];
                         System.Array.Resize(ref defines, defines.Length - 1);
                     }
                     else
                     {
                         System.Array.Resize(ref defines, defines.Length + 1);
-                        defines[defines.Length - 1] = PICKLE_IS_DEFAULT;
+                        defines[defines.Length - 1] = defineString;
 
                     }
 
