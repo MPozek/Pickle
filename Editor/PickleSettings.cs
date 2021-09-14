@@ -39,6 +39,12 @@ namespace Pickle.Editor
             }
         }
 
+        [Header("Defaults")]
+        [SerializeField] private PickerType _defaultPickerType = PickerType.Dropdown;
+        [SerializeField] private int _defaultObjectProvider = (int)(ObjectProviderType.Assets | ObjectProviderType.Scene);
+        [SerializeField] private AutoPickMode _defaultAutoPickMode = AutoPickMode.None;
+
+        [Header("Open in window types")]
         [SerializeField] 
         private List<string> _defaultToWindowTypeNames = new List<string>() { typeof(Sprite).FullName, typeof(Texture2D).FullName, typeof(Mesh).FullName };
 
@@ -56,8 +62,33 @@ namespace Pickle.Editor
         {
             private const string PICKLE_IS_DEFAULT = "DEFAULT_TO_PICKLE";
 
+            private SerializedProperty _defaultPickerTypeProp;
+            private SerializedProperty _defaultProviderTypeProp;
+            private SerializedProperty _defaultAutoPickModeProp;
+            private SerializedProperty _defaultToWindowTypesProp;
+
+            private string[] _providerMaskDisplayNames;
+
             public override void OnInspectorGUI()
             {
+                base.DrawHeader();
+
+                FetchProperties();
+
+                EditorGUILayout.PropertyField(_defaultPickerTypeProp);
+                EditorGUILayout.PropertyField(_defaultAutoPickModeProp);
+
+                int providerTypeMask = _defaultProviderTypeProp.intValue;
+
+                var newTypeMask = EditorGUILayout.MaskField("Default Provider Type", providerTypeMask, _providerMaskDisplayNames);
+                if (newTypeMask != providerTypeMask)
+                {
+                    _defaultProviderTypeProp.intValue = newTypeMask;
+                }
+
+
+                EditorGUILayout.PropertyField(_defaultToWindowTypesProp);
+
                 PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup, out var defines);
 
                 EditorGUILayout.Space();
@@ -68,7 +99,7 @@ namespace Pickle.Editor
 
                 var buttonStyle = (GUIStyle)"AC Button";
                 var size = buttonStyle.CalcSize(new GUIContent(toggleButtonLabel));
-                
+
                 var buttonRect = EditorGUILayout.GetControlRect(false, GUILayout.ExpandWidth(true), GUILayout.Height(size.y));
                 buttonRect = Rect.MinMaxRect(
                     buttonRect.center.x - size.x * 0.5f,
@@ -96,8 +127,47 @@ namespace Pickle.Editor
 
                     Repaint();
                 }
+            }
 
-                base.OnInspectorGUI();
+            private void FetchProperties()
+            {
+                if (_defaultPickerTypeProp == null)
+                    _defaultPickerTypeProp = serializedObject.FindProperty(nameof(_defaultPickerType));
+
+                if (_defaultProviderTypeProp == null)
+                    _defaultProviderTypeProp = serializedObject.FindProperty(nameof(_defaultObjectProvider));
+
+                if (_defaultAutoPickModeProp == null)
+                    _defaultAutoPickModeProp = serializedObject.FindProperty(nameof(_defaultAutoPickMode));
+
+                if (_defaultToWindowTypesProp == null)
+                    _defaultToWindowTypesProp = serializedObject.FindProperty(nameof(_defaultToWindowTypeNames));
+
+                if (_providerMaskDisplayNames == null || _providerMaskDisplayNames.Length == 0)
+                {
+                    var values = (ObjectProviderType[]) System.Enum.GetValues(typeof(ObjectProviderType));
+                    foreach ( var val in values)
+                    {
+                        Debug.LogError("\t " + System.Convert.ToString((int)val, 2));
+                    }
+
+                    var displayNames = new List<string>();
+
+                    for (int i = 0; i < 32; i++)
+                    {
+                        var val = 1 << i;
+                        if (System.Array.IndexOf(values, (ObjectProviderType)val) >= 0)
+                        {
+                            displayNames.Add(((ObjectProviderType)val).ToString());
+                        }
+                        else
+                        {
+                            displayNames.Add(i.ToString());
+                        }
+                    }
+
+                    _providerMaskDisplayNames = displayNames.ToArray();
+                }
             }
         }
     }

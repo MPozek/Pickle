@@ -3,14 +3,15 @@ using UnityEngine;
 
 namespace Pickle
 {
-
     [AttributeUsage(AttributeTargets.Field)]
     public class PickleAttribute : PropertyAttribute
     {
-        public ObjectProviderType LookupType = ObjectProviderType.Assets | ObjectProviderType.Scene;
-        public PickerType PickerType = PickerType.Dropdown;
+        public ObjectProviderType LookupType = ObjectProviderType.Default;
+        public PickerType PickerType = PickerType.Default;
         public string FilterMethodName = null;
-        public AutoPickMode AutoPickMode = AutoPickMode.None;
+        public AutoPickMode AutoPickMode = AutoPickMode.Default;
+
+        public PickleAttribute() { }
 
         public PickleAttribute(ObjectProviderType providerType, string filterMethod = null)
         {
@@ -30,10 +31,5 @@ namespace Pickle
             AutoPickMode = autoPick;
             FilterMethodName = filterMethod;
         }
-    }
-
-    public enum PickerType
-    {
-        Window, Dropdown
     }
 }
