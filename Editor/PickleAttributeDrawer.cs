@@ -190,7 +190,7 @@ namespace Pickle.Editor
 
                 if (GUI.Button(buttonRect, "A"))
                 {
-                    ChangeObject(_autoPickMode.DoAutoPick(_property.serializedObject.targetObject, _fieldType));        
+                    ChangeObject(_autoPickMode.DoAutoPick(_property.serializedObject.targetObject, _fieldType, _filter));
                 }
             }
 
