@@ -45,9 +45,6 @@ namespace Pickle.Editor
                     return;
                 }
 
-                _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, _fieldType);
-                _objectFieldDrawer.OnObjectPickerButtonClicked += OpenObjectPicker;
-
                 _filter = null;
 
                 IObjectProvider objectProvider;
@@ -55,10 +52,23 @@ namespace Pickle.Editor
 
                 if (base.attribute != null)
                 {
-                    ExtractConfigurationFromAttribute(targetObject, targetObjectType, out objectProvider, out pickerType);
+                    var attribute = (PickleAttribute)this.attribute;
+
+                    ExtractConfigurationFromAttribute(attribute, targetObject, targetObjectType, out objectProvider, out pickerType);
+
+                    if (attribute.InterfaceFilter != null)
+                    {
+                        _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, $"{_fieldType.Name}: {attribute.InterfaceFilter.Name}");
+                    }
+                    else
+                    {
+                        _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, _fieldType);
+                    }
                 }
                 else
                 {
+                    _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, _fieldType);
+
                     objectProvider = ObjectProviderUtilities.ResolveProviderTypeToProvider(PickleSettings.GetDefaultProviderType(), _fieldType, targetObject, true);
                     _autoPickMode = PickleSettings.DefaultAutoPickMode;
                     pickerType = PickleSettings.GetDefaultPickerType(_fieldType);
@@ -66,6 +76,7 @@ namespace Pickle.Editor
 
                 InitializePickerPopup(objectProvider, pickerType);
 
+                _objectFieldDrawer.OnObjectPickerButtonClicked += OpenObjectPicker;
                 _objectPicker.OnOptionPicked += ChangeObject;
             }
         }
@@ -92,10 +103,8 @@ namespace Pickle.Editor
             }
         }
 
-        private void ExtractConfigurationFromAttribute(UnityEngine.Object targetObject, Type targetObjectType, out IObjectProvider objectProvider, out PickerType pickerType)
+        private void ExtractConfigurationFromAttribute(PickleAttribute attribute, UnityEngine.Object targetObject, Type targetObjectType, out IObjectProvider objectProvider, out PickerType pickerType)
         {
-            var attribute = (PickleAttribute)this.attribute;
-
             var lookupType = attribute.LookupType == ObjectProviderType.Default ? PickleSettings.GetDefaultProviderType() : attribute.LookupType;
             objectProvider = lookupType.ResolveProviderTypeToProvider(_fieldType, targetObject);
 
@@ -122,6 +131,21 @@ namespace Pickle.Editor
                 else
                 {
                     Debug.LogError($"CustomPicker filter method with name {attribute.FilterMethodName} on object {targetObject} not found!", targetObject);
+                }
+            }
+
+            if (attribute.InterfaceFilter != null)
+            {
+                if (_filter == null)
+                {
+                    _filter = (objectTypePair) => attribute.InterfaceFilter.IsAssignableFrom(objectTypePair.Object.GetType());
+                }
+                else
+                {
+                    var customFilter = _filter;
+                    _filter = (objectTypePair) => 
+                        attribute.InterfaceFilter.IsAssignableFrom(objectTypePair.Object.GetType())
+                        && customFilter(objectTypePair);
                 }
             }
 

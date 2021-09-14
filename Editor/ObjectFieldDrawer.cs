@@ -12,9 +12,9 @@ namespace Pickle.Editor
 
         public Rect FieldRect { get; private set; }
 
-        private static GUIContent DefaultObjectLabelGetter(UnityEngine.Object obj, Type type)
+        private static GUIContent DefaultObjectLabelGetter(UnityEngine.Object obj, string typeName)
         {
-            return obj ? new GUIContent(obj.ToString(), AssetPreview.GetMiniThumbnail(obj)) : new GUIContent($"None ({type.Name})");
+            return obj ? new GUIContent(obj.ToString(), AssetPreview.GetMiniThumbnail(obj)) : new GUIContent($"None ({typeName})");
         }
 
         public ObjectFieldDrawer(Predicate<UnityEngine.Object> isObjectValidForField, Func<UnityEngine.Object, GUIContent> objectLabelGetter)
@@ -23,10 +23,16 @@ namespace Pickle.Editor
             _objectLabelGetter = objectLabelGetter;
         }
 
-        public ObjectFieldDrawer(Predicate<UnityEngine.Object> isObjectValidForField, System.Type objectType)
+        public ObjectFieldDrawer(Predicate<UnityEngine.Object> isObjectValidForField, System.Type fieldType)
         {
             IsObjectValidForField = isObjectValidForField;
-            _objectLabelGetter = (obj) => DefaultObjectLabelGetter(obj, objectType);
+            _objectLabelGetter = (obj) => DefaultObjectLabelGetter(obj, fieldType.Name);
+        }
+
+        public ObjectFieldDrawer(Predicate<UnityEngine.Object> isObjectValidForField, string fieldTypeName)
+        {
+            IsObjectValidForField = isObjectValidForField;
+            _objectLabelGetter = (obj) => DefaultObjectLabelGetter(obj, fieldTypeName);
         }
 
         public UnityEngine.Object Draw(
