@@ -1,8 +1,13 @@
 ﻿using System;
 using UnityEngine;
 
+#if !PICKLE_IN_ROOT_NAMESPACE
 namespace Pickle
 {
+#else 
+using Pickle;
+#endif
+
     [AttributeUsage(AttributeTargets.Field)]
     public class PickleAttribute : PropertyAttribute
     {
@@ -32,4 +37,7 @@ namespace Pickle
             FilterMethodName = filterMethod;
         }
     }
+
+#if !PICKLE_IN_ROOT_NAMESPACE
 }
+#endif

@@ -72,6 +72,7 @@ namespace Pickle.Editor
         public class PickleSettingsEditor : UnityEditor.Editor
         {
             private const string PICKLE_IS_DEFAULT = "DEFAULT_TO_PICKLE";
+            private const string PICKLE_IN_ROOT_NAMESPACE = "PICKLE_IN_ROOT_NAMESPACE";
 
             private SerializedProperty _defaultPickerTypeProp;
             private SerializedProperty _defaultProviderTypeProp;
@@ -100,13 +101,27 @@ namespace Pickle.Editor
 
                 EditorGUILayout.PropertyField(_defaultToWindowTypesProp);
 
-                PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup, out var defines);
+                DrawScriptingDefineToggles();
+                DrawScriptingDefineToggles();
+            }
 
+            private void DrawScriptingDefineToggles()
+            {
                 EditorGUILayout.Space();
 
-                var pickleDefineIndex = System.Array.IndexOf(defines, PICKLE_IS_DEFAULT);
+                PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup, out var defines);
+
+
+
+                DrawDefineToggle(PICKLE_IS_DEFAULT, defines, "Set Pickle as default picker", "Unset Pickle as default picker");
+                DrawDefineToggle(PICKLE_IN_ROOT_NAMESPACE, defines, "Move attribute to default namespace", "Move attribute to Pickle namespace");
+            }
+
+            private void DrawDefineToggle(string defineString, string[] defines, string positiveLabel, string negativeLabel)
+            {
+                var pickleDefineIndex = System.Array.IndexOf(defines, defineString);
                 var isPickleDefault = pickleDefineIndex >= 0;
-                var toggleButtonLabel = isPickleDefault ? "Unset Pickle as default picker" : "Set Pickle as default picker";
+                var toggleButtonLabel = isPickleDefault ? negativeLabel : positiveLabel;
 
                 var buttonStyle = (GUIStyle)"AC Button";
                 var size = buttonStyle.CalcSize(new GUIContent(toggleButtonLabel));
