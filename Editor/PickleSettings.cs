@@ -11,6 +11,9 @@ namespace Pickle.Editor
         {
             get
             {
+                if (m_instance)
+                    return m_instance;
+
                 var guids = AssetDatabase.FindAssets($"t:{nameof(PickleSettings)}");
                 if (guids.Length > 0)
                 {
