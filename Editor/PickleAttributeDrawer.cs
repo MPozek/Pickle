@@ -55,65 +55,80 @@ namespace Pickle.Editor
 
                 if (base.attribute != null)
                 {
-                    var attribute = (PickleAttribute)this.attribute;
-
-                    objectProvider = attribute.LookupType.ResolveProviderTypeToProvider(_fieldType, targetObject);
-
-                    if (!string.IsNullOrEmpty(attribute.FilterMethodName))
-                    {
-                        var filterMethodInfo = targetObjectType.GetMethod(
-                            attribute.FilterMethodName,
-                            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-                        );
-
-                        if (filterMethodInfo != null)
-                        {
-                            var parameters = filterMethodInfo.GetParameters();
-
-                            if (parameters.Length == 1 && parameters[0].ParameterType == typeof(ObjectTypePair))
-                            {
-                                _filter = (Predicate<ObjectTypePair>)Delegate.CreateDelegate(typeof(Predicate<ObjectTypePair>), targetObject, filterMethodInfo);
-                            }
-                            else
-                            {
-                                Debug.LogError($"CustomPicker filter method with name {attribute.FilterMethodName} on object {targetObject} has wrong arguments!", targetObject);
-                            }
-                        }
-                        else
-                        {
-                            Debug.LogError($"CustomPicker filter method with name {attribute.FilterMethodName} on object {targetObject} not found!", targetObject);
-                        }
-                    }
-
-                    pickerType = attribute.PickerType;
-
-                    // TODO :: CHECK IF VALID FOR BASE OBJECT
-                    _autoPickMode = attribute.AutoPickMode;
+                    ExtractConfigurationFromAttribute(targetObject, targetObjectType, out objectProvider, out pickerType);
                 }
                 else
                 {
-                    objectProvider = ObjectProviderUtilities.GetDefaultObjectProviderForType(_fieldType, targetObject, true);
+                    objectProvider = ObjectProviderUtilities.ResolveProviderTypeToProvider(PickleSettings.GetDefaultProviderType(), _fieldType, targetObject, true);
+                    _autoPickMode = PickleSettings.DefaultAutoPickMode;
+                    pickerType = PickleSettings.GetDefaultPickerType(_fieldType);
                 }
-                
-                if (pickerType == PickerType.Dropdown)
-                {
-                    _objectPicker = new ObjectPickerDropdown(
-                        objectProvider,
-                        new AdvancedDropdownState(),
-                        _filter
-                    );
-                }
-                else if (pickerType == PickerType.Window)
-                {
-                    _objectPicker = new ObjectPickerWindowBuilder(_property.displayName, objectProvider, _filter);
-                }
-                else
-                {
-                    throw new System.NotImplementedException($"Picker type {pickerType} not implemented!");
-                }
+
+                InitializePickerPopup(objectProvider, pickerType);
 
                 _objectPicker.OnOptionPicked += ChangeObject;
             }
+        }
+
+        private void InitializePickerPopup(IObjectProvider objectProvider, PickerType pickerType)
+        {
+            if (pickerType == PickerType.Default) pickerType = PickerType.Dropdown;
+
+            if (pickerType == PickerType.Dropdown)
+            {
+                _objectPicker = new ObjectPickerDropdown(
+                    objectProvider,
+                    new AdvancedDropdownState(),
+                    _filter
+                );
+            }
+            else if (pickerType == PickerType.Window)
+            {
+                _objectPicker = new ObjectPickerWindowBuilder(_property.displayName, objectProvider, _filter);
+            }
+            else
+            {
+                throw new System.NotImplementedException($"Picker type {pickerType} not implemented!");
+            }
+        }
+
+        private void ExtractConfigurationFromAttribute(UnityEngine.Object targetObject, Type targetObjectType, out IObjectProvider objectProvider, out PickerType pickerType)
+        {
+            var attribute = (PickleAttribute)this.attribute;
+
+            var lookupType = attribute.LookupType == ObjectProviderType.Default ? PickleSettings.GetDefaultProviderType() : attribute.LookupType;
+            objectProvider = lookupType.ResolveProviderTypeToProvider(_fieldType, targetObject);
+
+            if (!string.IsNullOrEmpty(attribute.FilterMethodName))
+            {
+                var filterMethodInfo = targetObjectType.GetMethod(
+                    attribute.FilterMethodName,
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+                );
+
+                if (filterMethodInfo != null)
+                {
+                    var parameters = filterMethodInfo.GetParameters();
+
+                    if (parameters.Length == 1 && parameters[0].ParameterType == typeof(ObjectTypePair))
+                    {
+                        _filter = (Predicate<ObjectTypePair>)Delegate.CreateDelegate(typeof(Predicate<ObjectTypePair>), targetObject, filterMethodInfo);
+                    }
+                    else
+                    {
+                        Debug.LogError($"CustomPicker filter method with name {attribute.FilterMethodName} on object {targetObject} has wrong arguments!", targetObject);
+                    }
+                }
+                else
+                {
+                    Debug.LogError($"CustomPicker filter method with name {attribute.FilterMethodName} on object {targetObject} not found!", targetObject);
+                }
+            }
+
+            pickerType = attribute.PickerType == PickerType.Default ? PickleSettings.GetDefaultPickerType(_fieldType) : attribute.PickerType;
+
+            // TODO :: CHECK IF VALID FOR BASE OBJECT
+            _autoPickMode = attribute.AutoPickMode == AutoPickMode.Default ? PickleSettings.DefaultAutoPickMode : attribute.AutoPickMode;
         }
 
         private Type ExtractFieldType(System.Reflection.FieldInfo fieldInfo)

@@ -20,6 +20,8 @@ namespace Pickle.Editor
             }
         }
 
+        public static AutoPickMode DefaultAutoPickMode => _instance ? _instance._defaultAutoPickMode : AutoPickMode.None;
+
         [InitializeOnLoadMethod]
         private static void InitializePickleSettings()
         {
@@ -54,7 +56,16 @@ namespace Pickle.Editor
             if (!instance)
                 return PickerType.Dropdown;
 
-            return instance._defaultToWindowTypeNames.Contains(fieldType.FullName) ? PickerType.Window : PickerType.Dropdown;
+            return instance._defaultToWindowTypeNames.Contains(fieldType.FullName) ? PickerType.Window : instance._defaultPickerType;
+        }
+
+        public static ObjectProviderType GetDefaultProviderType()
+        {
+            var instance = _instance;
+            if (!instance)
+                return (ObjectProviderType.Scene | ObjectProviderType.Assets);
+
+            return (ObjectProviderType)instance._defaultObjectProvider;
         }
 
         [CustomEditor(typeof(PickleSettings))]
@@ -110,7 +121,6 @@ namespace Pickle.Editor
 
                 if (GUI.Button(buttonRect, toggleButtonLabel, buttonStyle))
                 {
-
                     if (isPickleDefault)
                     {
                         defines[pickleDefineIndex] = defines[defines.Length - 1];
@@ -146,11 +156,6 @@ namespace Pickle.Editor
                 if (_providerMaskDisplayNames == null || _providerMaskDisplayNames.Length == 0)
                 {
                     var values = (ObjectProviderType[]) System.Enum.GetValues(typeof(ObjectProviderType));
-                    foreach ( var val in values)
-                    {
-                        Debug.LogError("\t " + System.Convert.ToString((int)val, 2));
-                    }
-
                     var displayNames = new List<string>();
 
                     for (int i = 0; i < 32; i++)
