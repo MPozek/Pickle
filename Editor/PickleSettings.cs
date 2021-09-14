@@ -6,6 +6,12 @@ namespace Pickle.Editor
 {
     public class PickleSettings : ScriptableObject
     {
+        /// <summary>
+        /// Editor preferences key for:
+        /// Last known location of the pickle settings asset
+        /// </summary>
+        private const string PICKLE_SETTINGS_LAST_KNOWN_LOCATION = "PICKLE_SETTINGS_LAST_KNOWN_LOCATION";
+
         private static PickleSettings m_instance;
         private static PickleSettings _instance
         {
@@ -14,10 +20,22 @@ namespace Pickle.Editor
                 if (m_instance)
                     return m_instance;
 
+                var lastKnownLocation = EditorPrefs.GetString(PICKLE_SETTINGS_LAST_KNOWN_LOCATION, null);
+                if (lastKnownLocation != null)
+                {
+                    m_instance = AssetDatabase.LoadAssetAtPath<PickleSettings>(PICKLE_SETTINGS_LAST_KNOWN_LOCATION);
+                    if (m_instance)
+                        return m_instance;
+                }
+
                 var guids = AssetDatabase.FindAssets($"t:{nameof(PickleSettings)}");
                 if (guids.Length > 0)
                 {
-                    m_instance = AssetDatabase.LoadAssetAtPath<PickleSettings>(AssetDatabase.GUIDToAssetPath(guids[0]));
+                    var path = AssetDatabase.GUIDToAssetPath(guids[0]);
+                    m_instance = AssetDatabase.LoadAssetAtPath<PickleSettings>(path);
+
+                    lastKnownLocation = path;
+                    EditorPrefs.SetString(PICKLE_SETTINGS_LAST_KNOWN_LOCATION, lastKnownLocation);
                 }
                 return m_instance;
             }
