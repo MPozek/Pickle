@@ -2,7 +2,8 @@
 [![openupm](https://img.shields.io/npm/v/com.mpozek.pickle?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.mpozek.pickle/)
 
 A better Object picking solution for Unity.
-![pickle_usage](https://user-images.githubusercontent.com/15526815/130478936-3b22a37b-3c9e-405d-8d79-df068852cdf6.gif)
+
+![Pickle_Preview](https://user-images.githubusercontent.com/15526815/132820255-99ac69b3-c26c-4b11-9a70-a20b0e1ce266.gif)
 
 ## What is Pickle?
 Pickle is a collection of Editor scripts and Attributes that aim to replicate and extend the behaviour of the default UnityEngine.Object picker.
@@ -34,7 +35,7 @@ That's it! Unity should handle the rest of downloading and adding Pickle to your
 ```cs
 // it's easy
 [Pickle]
-public Rigidbody2D DefaultPicker;
+public Rigidbody DefaultPicker;
 
 // open the picker as a dropdown, this is the default behaviour
 [Pickle(PickerType = PickerType.Dropdown)]
@@ -46,25 +47,25 @@ public GameObject CustomWindowPicker;
 
 // supports both arrays and lists
 [Pickle]
-public Rigidbody2D[] RigidbodyArray;
+public Rigidbody[] RigidbodyArray;
 [Pickle]
-public List<Rigidbody2D> RigidbodyList;
+public List<Rigidbody> RigidbodyList;
 
 // narrow down the allowed objects on the field, the default is both assets and scene
 [Pickle(LookupType = ObjectProviderType.Scene)]
-public Rigidbody2D OnlySceneObjects;
+public Transform OnlySceneObjects;
 
 [Pickle(LookupType = ObjectProviderType.Assets)]
-public Rigidbody2D OnlyPrefabs;
+public Transform OnlyPrefabs;
 
 [Pickle(LookupType = ObjectProviderType.Children)]
-public Rigidbody2D OnlyChildrenOfThisObject;
+public Transform OnlyChildrenOfThisObject;
 
 [Pickle(LookupType = ObjectProviderType.RootChildren)]
-public Rigidbody2D OnlyChildrenOfTheRootOfThisObject;
+public Transform OnlyChildrenOfTheRootOfThisObject;
 
 [Pickle(LookupType = ObjectProviderType.Assets | ObjectProviderType.Scene)]
-public Rigidbody2D AnyAssetOrSceneObject;
+public Transform AnyAssetOrSceneObject;
 
 // use a custom method to filter your results
 [Pickle(LookupType = ObjectProviderType.Scene, FilterMethodName = nameof(CustomFilter))]
@@ -74,4 +75,17 @@ private bool CustomFilter(ObjectTypePair item)
 {
     return item.Object.name.StartsWith("UI_");
 }
+
+[Header("Auto picking")]
+[Pickle(AutoPickMode = AutoPickMode.GetComponent)]
+public Transform MyTransform;
+
+[Pickle(AutoPickMode = AutoPickMode.GetComponentInChildren)]
+public MeshRenderer ChildRenderer;
+
+[Pickle(AutoPickMode = AutoPickMode.GetComponentInParent)]
+public Rigidbody ParentRigidbody;
+
+[Pickle(AutoPickMode = AutoPickMode.FindObject)]
+public Camera SceneCamera;
 ```
