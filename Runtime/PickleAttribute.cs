@@ -13,9 +13,10 @@ using Pickle;
     {
         public ObjectProviderType LookupType = ObjectProviderType.Default;
         public PickerType PickerType = PickerType.Default;
-        public Type InterfaceFilter;
+        public Type AdditionalTypeFilter;
         public string FilterMethodName = null;
         public AutoPickMode AutoPickMode = AutoPickMode.Default;
+        public string CustomTypeName = null;
 
         public PickleAttribute() { }
 
@@ -44,33 +45,33 @@ using Pickle;
         }
 
         public PickleAttribute(
-            Type interfaceFilter,
+            Type additionalTypeFilter,
             ObjectProviderType providerType = ObjectProviderType.Default,
             AutoPickMode autoPick = AutoPickMode.Default,
             string filterMethod = null)
         {
-            InterfaceFilter = interfaceFilter;
+            AdditionalTypeFilter = additionalTypeFilter;
             LookupType = providerType;
             AutoPickMode = autoPick;
             FilterMethodName = filterMethod;
         }
 
-        public PickleAttribute(Type interfaceFilter, AutoPickMode autoPick, string filterMethod = null)
+        public PickleAttribute(Type additionalTypeFilter, AutoPickMode autoPick, string filterMethod = null)
         {
-            InterfaceFilter = interfaceFilter;
+            AdditionalTypeFilter = additionalTypeFilter;
             AutoPickMode = autoPick;
             FilterMethodName = filterMethod;
         }
 
-        public PickleAttribute(Type interfaceFilter, string filterMethod)
+        public PickleAttribute(Type additionalTypeFilter, string filterMethod)
         {
-            InterfaceFilter = interfaceFilter;
+            AdditionalTypeFilter = additionalTypeFilter;
             FilterMethodName = filterMethod;
         }
 
-        public PickleAttribute(Type interfaceFilter, ObjectProviderType providerType, string filterMethod = null)
+        public PickleAttribute(Type additionalTypeFilter, ObjectProviderType providerType, string filterMethod = null)
         {
-            InterfaceFilter = interfaceFilter;
+            AdditionalTypeFilter = additionalTypeFilter;
             LookupType = providerType;
             FilterMethodName = filterMethod;
         }

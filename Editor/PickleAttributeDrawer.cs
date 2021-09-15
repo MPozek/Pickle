@@ -56,9 +56,13 @@ namespace Pickle.Editor
 
                     ExtractConfigurationFromAttribute(attribute, targetObject, targetObjectType, out objectProvider, out pickerType);
 
-                    if (attribute.InterfaceFilter != null)
+                    if (attribute.CustomTypeName != null)
                     {
-                        _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, $"{_fieldType.Name}: {attribute.InterfaceFilter.Name}");
+                        _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, attribute.CustomTypeName);
+                    }
+                    else if (attribute.AdditionalTypeFilter != null)
+                    {
+                        _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, $"{_fieldType.Name}: {attribute.AdditionalTypeFilter.Name}");
                     }
                     else
                     {
@@ -130,21 +134,21 @@ namespace Pickle.Editor
                 }
                 else
                 {
-                    Debug.LogError($"CustomPicker filter method with name {attribute.FilterMethodName} on object {targetObject} not found!", targetObject);
+                    Debug.LogError($"CustomPicker filter method with name {attribute.FilterMethodName} on object {targetObject}:{targetObjectType} not found!", targetObject);
                 }
             }
 
-            if (attribute.InterfaceFilter != null)
+            if (attribute.AdditionalTypeFilter != null)
             {
                 if (_filter == null)
                 {
-                    _filter = (objectTypePair) => attribute.InterfaceFilter.IsAssignableFrom(objectTypePair.Object.GetType());
+                    _filter = (objectTypePair) => attribute.AdditionalTypeFilter.IsAssignableFrom(objectTypePair.Object.GetType());
                 }
                 else
                 {
                     var customFilter = _filter;
                     _filter = (objectTypePair) => 
-                        attribute.InterfaceFilter.IsAssignableFrom(objectTypePair.Object.GetType())
+                        attribute.AdditionalTypeFilter.IsAssignableFrom(objectTypePair.Object.GetType())
                         && customFilter(objectTypePair);
                 }
             }
