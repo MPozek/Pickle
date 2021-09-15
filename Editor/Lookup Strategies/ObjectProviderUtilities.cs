@@ -10,7 +10,7 @@ namespace Pickle.ObjectProviders
             this ObjectProviderType providerType, 
             System.Type fieldType, 
             UnityEngine.Object owner = null,
-            bool allowPackages = true)
+            bool allowPackages = false)
         {
             List<IObjectProvider> strategiesForUnion = new List<IObjectProvider>();
 
@@ -25,8 +25,9 @@ namespace Pickle.ObjectProviders
                     ownerGameObject = go;
             }
 
+            var isFieldTypeObject = typeof(UnityEngine.Object) == fieldType;
             var isFieldTypeAComponent = typeof(Component).IsAssignableFrom(fieldType);
-            var isFieldTypeASceneObject = typeof(GameObject) == fieldType || isFieldTypeAComponent;
+            var isFieldTypeASceneObject = isFieldTypeObject || typeof(GameObject) == fieldType || isFieldTypeAComponent;
 
             if ((providerType & ObjectProviderType.Assets) != 0)
             {
@@ -48,6 +49,11 @@ namespace Pickle.ObjectProviders
                     {
                         strategiesForUnion.Add(new SceneComponentsProvider(ownerGameObject.scene, fieldType));
                     }
+                    else if (isFieldTypeObject)
+                    {
+                        strategiesForUnion.Add(new SceneComponentsProvider(ownerGameObject.scene, typeof(Component)));
+                        strategiesForUnion.Add(new SceneObjectsProvider(ownerGameObject.scene));
+                    }
                     else
                     {
                         strategiesForUnion.Add(new SceneObjectsProvider(ownerGameObject.scene));
@@ -61,6 +67,11 @@ namespace Pickle.ObjectProviders
                         {
                             strategiesForUnion.Add(new RootChildrenComponentsProvider(ownerGameObject.transform, fieldType));
                         }
+                        else if (isFieldTypeObject)
+                        {
+                            strategiesForUnion.Add(new RootChildrenComponentsProvider(ownerGameObject.transform, fieldType));
+                            strategiesForUnion.Add(new RootChildrenObjectsProvider(ownerGameObject.transform));
+                        }
                         else
                         {
                             strategiesForUnion.Add(new RootChildrenObjectsProvider(ownerGameObject.transform));
@@ -72,6 +83,11 @@ namespace Pickle.ObjectProviders
                         {
                             strategiesForUnion.Add(new ChildComponentsProvider(ownerGameObject.transform, fieldType));
                         }
+                        else if (isFieldTypeObject)
+                        {
+                            strategiesForUnion.Add(new ChildComponentsProvider(ownerGameObject.transform, fieldType));
+                            strategiesForUnion.Add(new ChildObjectsProvider(ownerGameObject.transform));
+                        }
                         else
                         {
                             strategiesForUnion.Add(new ChildObjectsProvider(ownerGameObject.transform));
@@ -81,11 +97,6 @@ namespace Pickle.ObjectProviders
             }
 
             return new ObjectProviderUnion(strategiesForUnion.ToArray());
-        }
-
-        public static IObjectProvider GetDefaultObjectProviderForType(System.Type fieldType, UnityEngine.Object owner = null, bool allowPackages = false)
-        {
-            return (ObjectProviderType.Assets | ObjectProviderType.Scene).ResolveProviderTypeToProvider(fieldType, owner, allowPackages);
         }
     }
 }

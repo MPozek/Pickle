@@ -1,45 +1,82 @@
 ﻿using System;
 using UnityEngine;
 
+#if !PICKLE_IN_ROOT_NAMESPACE
 namespace Pickle
 {
+#else 
+using Pickle;
+#endif
 
     [AttributeUsage(AttributeTargets.Field)]
     public class PickleAttribute : PropertyAttribute
     {
-        public ObjectProviderType LookupType = ObjectProviderType.Assets | ObjectProviderType.Scene;
-        public PickerType PickerType = PickerType.Dropdown;
+        public ObjectProviderType LookupType = ObjectProviderType.Default;
+        public PickerType PickerType = PickerType.Default;
+        public Type AdditionalTypeFilter;
         public string FilterMethodName = null;
-        public AutoPickMode AutoPickMode = AutoPickMode.None;
-    }
+        public AutoPickMode AutoPickMode = AutoPickMode.Default;
+        public string CustomTypeName = null;
 
-    public enum PickerType
-    {
-        Window, Dropdown
-    }
+        public PickleAttribute() { }
 
-    public enum AutoPickMode
-    {
-        None, GetComponent, GetComponentInChildren, FindObject, GetComponentInParent
-    }
-
-    public static class EnumExtensions
-    {
-        public static UnityEngine.Object DoAutoPick(this AutoPickMode mode, UnityEngine.Object fromObject, System.Type targetType)
+        public PickleAttribute(string filterMethod)
         {
-            switch (mode)
-            {
-                case AutoPickMode.GetComponent:
-                    return ((Component)fromObject).GetComponent(targetType);
-                case AutoPickMode.GetComponentInChildren:
-                    return ((Component)fromObject).GetComponentInChildren(targetType);
-                case AutoPickMode.GetComponentInParent:
-                    return ((Component)fromObject).GetComponentInParent(targetType);
-                case AutoPickMode.FindObject:
-                    return GameObject.FindObjectOfType(targetType);
-            }
+            FilterMethodName = filterMethod;
+        }
 
-            throw new System.NotImplementedException($"Auto picking for mode {mode} is not implemented!");
+        public PickleAttribute(ObjectProviderType providerType, string filterMethod = null)
+        {
+            LookupType = providerType;
+            FilterMethodName = filterMethod;
+        }
+
+        public PickleAttribute(ObjectProviderType providerType, AutoPickMode autoPick, string filterMethod = null)
+        {
+            LookupType = providerType;
+            AutoPickMode = autoPick;
+            FilterMethodName = filterMethod;
+        }
+
+        public PickleAttribute(AutoPickMode autoPick, string filterMethod = null)
+        {
+            AutoPickMode = autoPick;
+            FilterMethodName = filterMethod;
+        }
+
+        public PickleAttribute(
+            Type additionalTypeFilter,
+            ObjectProviderType providerType = ObjectProviderType.Default,
+            AutoPickMode autoPick = AutoPickMode.Default,
+            string filterMethod = null)
+        {
+            AdditionalTypeFilter = additionalTypeFilter;
+            LookupType = providerType;
+            AutoPickMode = autoPick;
+            FilterMethodName = filterMethod;
+        }
+
+        public PickleAttribute(Type additionalTypeFilter, AutoPickMode autoPick, string filterMethod = null)
+        {
+            AdditionalTypeFilter = additionalTypeFilter;
+            AutoPickMode = autoPick;
+            FilterMethodName = filterMethod;
+        }
+
+        public PickleAttribute(Type additionalTypeFilter, string filterMethod)
+        {
+            AdditionalTypeFilter = additionalTypeFilter;
+            FilterMethodName = filterMethod;
+        }
+
+        public PickleAttribute(Type additionalTypeFilter, ObjectProviderType providerType, string filterMethod = null)
+        {
+            AdditionalTypeFilter = additionalTypeFilter;
+            LookupType = providerType;
+            FilterMethodName = filterMethod;
         }
     }
+
+#if !PICKLE_IN_ROOT_NAMESPACE
 }
+#endif

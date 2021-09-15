@@ -32,11 +32,27 @@ namespace Pickle.ObjectProviders
                 if (!_allowPackageAssets && !path.StartsWith("Assets"))
                     continue;
 
-                var asset = AssetDatabase.LoadAssetAtPath(path, _type);
-
-                if (_additionalFilter == null || _additionalFilter.Invoke(asset))
+                if (path.EndsWith(".unity"))
                 {
-                    yield return new ObjectTypePair { Object = asset, Type = ObjectSourceType.Asset };
+                    // it's invalid to use load all assets on scene objects
+                    var asset = AssetDatabase.LoadAssetAtPath(path, _type);
+                
+                    if (_additionalFilter == null || _additionalFilter.Invoke(asset))
+                    {
+                        yield return new ObjectTypePair { Object = asset, Type = ObjectSourceType.Asset };
+                    }
+                }
+                else
+                {
+                    foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(path))
+                    {
+                        AssetDatabase.TryGetGUIDAndLocalFileIdentifier(asset, out var loadedGuid, out long _);
+
+                        if (guid == loadedGuid && _additionalFilter == null || _additionalFilter.Invoke(asset))
+                        {
+                            yield return new ObjectTypePair { Object = asset, Type = ObjectSourceType.Asset };
+                        }
+                    }
                 }
             }
 #else
