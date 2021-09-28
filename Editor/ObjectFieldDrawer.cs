@@ -87,7 +87,30 @@ namespace Pickle.Editor
 
             GUIContent activeObjectLabel = _objectLabelGetter(activeObject);
 
-            GUI.Toggle(dropBoxRect, dropBoxRect.Contains(Event.current.mousePosition) && GetDraggedObjectIfValid(), activeObjectLabel, EditorStyles.objectField);
+            if (activeObjectLabel.image)
+            {
+                GUI.Toggle(dropBoxRect, dropBoxRect.Contains(Event.current.mousePosition) && GetDraggedObjectIfValid(), GUIContent.none, EditorStyles.objectField);
+
+                var iconRect = dropBoxRect;
+                iconRect.center += Vector2.right * 3f;
+                iconRect.width = 15f;
+
+                var labelRect = dropBoxRect;
+                labelRect.xMin += iconRect.width + 1f;
+
+                var icon = activeObjectLabel.image;
+                activeObjectLabel.image = null;
+
+                var labelStyle = new GUIStyle(EditorStyles.objectField);
+                labelStyle.normal.background = Texture2D.blackTexture;
+
+                EditorGUI.LabelField(labelRect, activeObjectLabel, labelStyle);
+                GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit);
+            }
+            else
+            {
+                GUI.Toggle(dropBoxRect, dropBoxRect.Contains(Event.current.mousePosition) && GetDraggedObjectIfValid(), activeObjectLabel, EditorStyles.objectField);
+            }
 
             var objectFieldButtonStyle = new GUIStyle("ObjectFieldButton");
             GUI.Button(buttonRect, new GUIContent(""), objectFieldButtonStyle);
