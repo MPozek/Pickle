@@ -12,7 +12,7 @@ namespace Pickle.Editor
 
         public Rect FieldRect { get; private set; }
 
-        private static GUIContent DefaultObjectLabelGetter(UnityEngine.Object obj, string typeName)
+        public static GUIContent DefaultObjectLabelGetter(UnityEngine.Object obj, string typeName)
         {
             return obj ? new GUIContent(obj.ToString(), AssetPreview.GetMiniThumbnail(obj)) : new GUIContent($"None ({typeName})");
         }
