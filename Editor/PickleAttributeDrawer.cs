@@ -7,6 +7,15 @@ using System.Collections;
 
 namespace Pickle.Editor
 {
+    public struct PickleFieldConfiguration
+    {
+        public IObjectProvider ObjectProvider;
+        public PickerType PickerType;
+        public AutoPickMode AutoPickMode;
+        public Predicate<ObjectTypePair> Filter;
+    }
+
+
 #if DEFAULT_TO_PICKLE
     [CustomPropertyDrawer(typeof(UnityEngine.Object), true)]
 #endif
@@ -21,8 +30,8 @@ namespace Pickle.Editor
         private ObjectFieldDrawer _objectFieldDrawer;
         private IObjectPicker _objectPicker;
         private SerializedProperty _property;
-        private Predicate<ObjectTypePair> _filter;
-        private AutoPickMode _autoPickMode;
+        private PickleFieldConfiguration _configuration;
+
 
         private void Initialize(SerializedProperty property)
         {
@@ -45,16 +54,16 @@ namespace Pickle.Editor
                     return;
                 }
 
-                _filter = null;
+                _configuration = new PickleFieldConfiguration();
+                _configuration.Filter = null;
 
-                IObjectProvider objectProvider;
                 PickerType pickerType = PickleSettings.GetDefaultPickerType(_fieldType);
 
                 if (base.attribute != null)
                 {
                     var attribute = (PickleAttribute)this.attribute;
 
-                    ExtractConfigurationFromAttribute(attribute, targetObject, targetObjectType, out objectProvider, out pickerType);
+                    _configuration = ExtractConfigurationFromAttribute(attribute, targetObject, targetObjectType, _fieldType);
 
                     if (attribute.CustomTypeName != null)
                     {
@@ -73,12 +82,12 @@ namespace Pickle.Editor
                 {
                     _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, _fieldType);
 
-                    objectProvider = ObjectProviderUtilities.ResolveProviderTypeToProvider(PickleSettings.GetDefaultProviderType(), _fieldType, targetObject, true);
-                    _autoPickMode = PickleSettings.DefaultAutoPickMode;
-                    pickerType = PickleSettings.GetDefaultPickerType(_fieldType);
+                    _configuration.ObjectProvider = ObjectProviderUtilities.ResolveProviderTypeToProvider(PickleSettings.GetDefaultProviderType(), _fieldType, targetObject, true);
+                    _configuration.AutoPickMode = PickleSettings.DefaultAutoPickMode;
+                    _configuration.PickerType = PickleSettings.GetDefaultPickerType(_fieldType);
                 }
 
-                InitializePickerPopup(objectProvider, pickerType);
+                InitializePickerPopup(_configuration.ObjectProvider, pickerType);
 
                 _objectFieldDrawer.OnObjectPickerButtonClicked += OpenObjectPicker;
                 _objectPicker.OnOptionPicked += ChangeObject;
@@ -94,12 +103,12 @@ namespace Pickle.Editor
                 _objectPicker = new ObjectPickerDropdown(
                     objectProvider,
                     new AdvancedDropdownState(),
-                    _filter
+                    _configuration.Filter
                 );
             }
             else if (pickerType == PickerType.Window)
             {
-                _objectPicker = new ObjectPickerWindowBuilder(_property.displayName, objectProvider, _filter);
+                _objectPicker = new ObjectPickerWindowBuilder(_property.displayName, objectProvider, _configuration.Filter);
             }
             else
             {
@@ -107,10 +116,16 @@ namespace Pickle.Editor
             }
         }
 
-        private void ExtractConfigurationFromAttribute(PickleAttribute attribute, UnityEngine.Object targetObject, Type targetObjectType, out IObjectProvider objectProvider, out PickerType pickerType)
+        private static PickleFieldConfiguration ExtractConfigurationFromAttribute(
+            PickleAttribute attribute, 
+            UnityEngine.Object targetObject, 
+            Type targetObjectType,
+            Type fieldType)
         {
+            var result = new PickleFieldConfiguration();
+
             var lookupType = attribute.LookupType == ObjectProviderType.Default ? PickleSettings.GetDefaultProviderType() : attribute.LookupType;
-            objectProvider = lookupType.ResolveProviderTypeToProvider(_fieldType, targetObject);
+            result.ObjectProvider = lookupType.ResolveProviderTypeToProvider(fieldType, targetObject);
 
             if (!string.IsNullOrEmpty(attribute.FilterMethodName))
             {
@@ -125,7 +140,7 @@ namespace Pickle.Editor
 
                     if (parameters.Length == 1 && parameters[0].ParameterType == typeof(ObjectTypePair))
                     {
-                        _filter = (Predicate<ObjectTypePair>)Delegate.CreateDelegate(typeof(Predicate<ObjectTypePair>), targetObject, filterMethodInfo);
+                        result.Filter = (Predicate<ObjectTypePair>)Delegate.CreateDelegate(typeof(Predicate<ObjectTypePair>), targetObject, filterMethodInfo);
                     }
                     else
                     {
@@ -140,23 +155,24 @@ namespace Pickle.Editor
 
             if (attribute.AdditionalTypeFilter != null)
             {
-                if (_filter == null)
+                if (result.Filter == null)
                 {
-                    _filter = (objectTypePair) => attribute.AdditionalTypeFilter.IsAssignableFrom(objectTypePair.Object.GetType());
+                    result.Filter = (objectTypePair) => attribute.AdditionalTypeFilter.IsAssignableFrom(objectTypePair.Object.GetType());
                 }
                 else
                 {
-                    var customFilter = _filter;
-                    _filter = (objectTypePair) => 
+                    var customFilter = result.Filter;
+                    result.Filter = (objectTypePair) => 
                         attribute.AdditionalTypeFilter.IsAssignableFrom(objectTypePair.Object.GetType())
                         && customFilter(objectTypePair);
                 }
             }
 
-            pickerType = attribute.PickerType == PickerType.Default ? PickleSettings.GetDefaultPickerType(_fieldType) : attribute.PickerType;
+            result.PickerType = attribute.PickerType == PickerType.Default ? PickleSettings.GetDefaultPickerType(fieldType) : attribute.PickerType;
 
-            // TODO :: CHECK IF VALID FOR BASE OBJECT
-            _autoPickMode = attribute.AutoPickMode == AutoPickMode.Default ? PickleSettings.DefaultAutoPickMode : attribute.AutoPickMode;
+            result.AutoPickMode = attribute.AutoPickMode == AutoPickMode.Default ? PickleSettings.DefaultAutoPickMode : attribute.AutoPickMode;
+
+            return result;
         }
 
         private Type ExtractFieldType(System.Reflection.FieldInfo fieldInfo)
@@ -207,7 +223,8 @@ namespace Pickle.Editor
                 obj = component;
             }
 
-            return _fieldType.IsAssignableFrom(obj.GetType()) && (_filter == null || _filter.Invoke(ObjectTypePair.EDITOR_ConstructPairFromObject(obj)));
+            return _fieldType.IsAssignableFrom(obj.GetType()) && 
+                (_configuration.Filter == null || _configuration.Filter.Invoke(ObjectTypePair.EDITOR_ConstructPairFromObject(obj)));
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -227,14 +244,14 @@ namespace Pickle.Editor
                 return;
             }
 
-            if (_autoPickMode != AutoPickMode.None)
+            if (_configuration.AutoPickMode != AutoPickMode.None)
             {
                 var buttonRect = Rect.MinMaxRect(position.xMax - AUTO_PICK_BUTTON_WIDTH, position.yMin, position.xMax, position.yMax);
                 position.width -= AUTO_PICK_BUTTON_WIDTH;
 
                 if (GUI.Button(buttonRect, "A"))
                 {
-                    ChangeObject(_autoPickMode.DoAutoPick(_property.serializedObject.targetObject, _fieldType, _filter));
+                    ChangeObject(_configuration.AutoPickMode.DoAutoPick(_property.serializedObject.targetObject, _fieldType, _configuration.Filter));
                 }
             }
 
