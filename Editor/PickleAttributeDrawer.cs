@@ -3,6 +3,8 @@ using UnityEditor;
 using UnityEngine;
 using Pickle.ObjectProviders;
 using System.Collections;
+using System.Text.RegularExpressions;
+using System.Reflection;
 
 namespace Pickle.Editor
 {
@@ -45,8 +47,9 @@ namespace Pickle.Editor
             if (base.attribute != null)
             {
                 var attribute = (PickleAttribute)this.attribute;
+                var ownerObject = property.GetOwnerObject();
 
-                configuration = ExtractConfigurationFromAttribute(attribute, targetObject, targetObjectType, fieldType);
+                configuration = ExtractConfigurationFromAttribute(attribute, ownerObject, targetObject, targetObjectType, fieldType);
 
                 if (attribute.CustomTypeName != null)
                 {
@@ -95,6 +98,7 @@ namespace Pickle.Editor
 
         private static PickleFieldConfiguration ExtractConfigurationFromAttribute(
             PickleAttribute attribute,
+            object ownerObject,
             UnityEngine.Object targetObject,
             Type targetObjectType,
             Type fieldType)
@@ -106,7 +110,7 @@ namespace Pickle.Editor
 
             if (!string.IsNullOrEmpty(attribute.FilterMethodName))
             {
-                var filterMethodInfo = targetObjectType.GetMethod(
+                var filterMethodInfo = ownerObject.GetType().GetMethod(
                     attribute.FilterMethodName,
                     System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
                 );
@@ -117,7 +121,7 @@ namespace Pickle.Editor
 
                     if (parameters.Length == 1 && parameters[0].ParameterType == typeof(ObjectTypePair))
                     {
-                        result.Filter = (Predicate<ObjectTypePair>)Delegate.CreateDelegate(typeof(Predicate<ObjectTypePair>), targetObject, filterMethodInfo);
+                        result.Filter = (Predicate<ObjectTypePair>)Delegate.CreateDelegate(typeof(Predicate<ObjectTypePair>), ownerObject, filterMethodInfo);
                     }
                     else
                     {
@@ -169,6 +173,80 @@ namespace Pickle.Editor
             }
 
             _fieldDrawer.OnGUI(position, property, label);
+        }
+    }
+
+    public static class SerializedPropertyExtension
+    {
+        const BindingFlags FLAGS_ALL = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
+
+        public static object GetOwnerObject(this SerializedProperty property)
+        {
+            object owner = property.serializedObject.targetObject;
+
+            var path = property.propertyPath.Replace(".Array.data[", "[");
+            var elements = path.Split('.');
+
+            for (int i = 0; i < elements.Length - 1; ++i)
+            {
+                var element = elements[i];
+                if (IsArrayElement(element))
+                {
+                    var (arrayName, index) = GetArrayInfo(element);
+
+                    var arrayFieldInfo = FindField(owner.GetType(), arrayName);
+                    if (arrayFieldInfo == null)
+                        return null;
+
+                    var array = arrayFieldInfo.GetValue(owner) as System.Array;
+                    if (array == null)
+                        return null;
+
+                    owner = array.GetValue(index);
+                }
+                else
+                {
+                    var fieldInfo = FindField(owner.GetType(), element);
+                    if (fieldInfo == null)
+                        return null;
+
+                    owner = fieldInfo.GetValue(owner);
+                }
+
+                if (owner == null)
+                    return null;
+
+            }
+
+            return owner;
+        }
+
+        public static bool IsArrayElement(string element)
+        {
+            return element.EndsWith("]");
+        }
+
+        static Regex arrayNameIndexRegex = new Regex(@"^(.+?)\[(.+?)\]$");
+        static (string name, int index) GetArrayInfo(string element)
+        {
+            var m = arrayNameIndexRegex.Match(element);
+            return (m.Groups[1].Value, int.Parse(m.Groups[2].Value));
+        }
+
+        public static FieldInfo FindField(Type type, string name)
+        {
+            while (type != null)
+            {
+                var result = type.GetField(name, FLAGS_ALL);
+
+                if (result != null)
+                    return result;
+
+                type = type.BaseType;
+
+            }
+
+            return null;
         }
     }
 }
