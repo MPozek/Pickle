@@ -136,6 +136,16 @@ namespace Pickle.Editor
             if (draggedObjects.Length != 1) return null;
             var obj = draggedObjects[0];
 
+            if (obj is GameObject gameObject)
+            {
+                foreach (var item in gameObject.GetComponents<Component>())
+                {
+                    if (IsObjectValidForField.Invoke(item))
+                        return item;
+                }
+                return null;
+            }
+
             return IsObjectValidForField.Invoke(obj) ? obj : null;
         }
 
