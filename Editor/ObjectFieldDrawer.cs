@@ -136,11 +136,23 @@ namespace Pickle.Editor
             if (draggedObjects.Length != 1) return null;
             var obj = draggedObjects[0];
 
+            if (obj is GameObject gameObject)
+            {
+                foreach (var item in gameObject.GetComponents<Component>())
+                {
+                    if (IsObjectValidForField.Invoke(item))
+                        return item;
+                }
+                return null;
+            }
+
             return IsObjectValidForField.Invoke(obj) ? obj : null;
         }
 
-        private static bool HandleDragEvents(bool isValidObjectBeingDragged, ref UnityEngine.Object activeObject)
+        private static bool HandleDragEvents(UnityEngine.Object validObjectBeingDragged, ref UnityEngine.Object activeObject)
         {
+            bool isValidObjectBeingDragged = validObjectBeingDragged;
+
             var ev = Event.current;
             if (ev.type == EventType.DragUpdated)
             {
@@ -160,7 +172,7 @@ namespace Pickle.Editor
                 if (isValidObjectBeingDragged)
                 {
                     DragAndDrop.AcceptDrag();
-                    activeObject = DragAndDrop.objectReferences[0];
+                    activeObject = validObjectBeingDragged;
                 }
 
                 return true;
