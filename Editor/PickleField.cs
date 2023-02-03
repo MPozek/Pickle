@@ -14,7 +14,6 @@ namespace Pickle.Editor
         private Type _fieldType;
         private ObjectFieldDrawer _objectFieldDrawer;
         private IObjectPicker _objectPicker;
-        private SerializedProperty _property;
         private PickleFieldConfiguration _configuration;
 
         public PickleField(
@@ -23,7 +22,7 @@ namespace Pickle.Editor
             PickleFieldConfiguration configuration)
         {
             _configuration = configuration;
-            _objectFieldDrawer = 
+            _objectFieldDrawer =
                 configuration.EmptyFieldLabel != null ?
                     new ObjectFieldDrawer(CheckObjectType, configuration.EmptyFieldLabel) :
                     new ObjectFieldDrawer(CheckObjectType, fieldType);
@@ -36,7 +35,7 @@ namespace Pickle.Editor
                 var targetObject = property.serializedObject.targetObject;
                 var targetObjectType = targetObject.GetType();
 
-                InitializePickerPopup(_configuration.ObjectProvider, _configuration.PickerType);
+                InitializePickerPopup(property, _configuration.ObjectProvider, _configuration.PickerType);
 
                 _objectFieldDrawer.OnObjectPickerButtonClicked += OpenObjectPicker;
                 _objectPicker.OnOptionPicked += ChangeObject;
@@ -50,7 +49,6 @@ namespace Pickle.Editor
 
         public void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            _property = property;
 
             if (!_isValidField)
             {
@@ -65,17 +63,17 @@ namespace Pickle.Editor
 
                 if (GUI.Button(buttonRect, "A"))
                 {
-                    ChangeObject(_configuration.AutoPickMode.DoAutoPick(_property.serializedObject.targetObject, _fieldType, _configuration.Filter));
+                    ChangeObject(property, _configuration.AutoPickMode.DoAutoPick(property.serializedObject.targetObject, _fieldType, _configuration.Filter));
                 }
             }
 
-            var newReference = _objectFieldDrawer.Draw(position, label, property.objectReferenceValue);
-            ChangeObject(newReference);
+            var newReference = _objectFieldDrawer.Draw(position, label, property, property.objectReferenceValue);
+            ChangeObject(property, newReference);
         }
 
-        private void ChangeObject(UnityEngine.Object obj)
+        private void ChangeObject(SerializedProperty property, UnityEngine.Object obj)
         {
-            if (obj == _property.objectReferenceValue)
+            if (obj == property.objectReferenceValue)
                 return;
 
             if (typeof(Component).IsAssignableFrom(_fieldType) && obj is GameObject go)
@@ -83,14 +81,14 @@ namespace Pickle.Editor
                 obj = go.GetComponent(_fieldType);
             }
 
-            if (_property.objectReferenceValue != obj)
+            if (property.objectReferenceValue != obj)
             {
-                _property.objectReferenceValue = obj;
-                _property.serializedObject.ApplyModifiedProperties();
+                property.objectReferenceValue = obj;
+                property.serializedObject.ApplyModifiedProperties();
             }
         }
 
-        private void InitializePickerPopup(IObjectProvider objectProvider, PickerType pickerType)
+        private void InitializePickerPopup(SerializedProperty property, IObjectProvider objectProvider, PickerType pickerType)
         {
             if (pickerType == PickerType.Default) pickerType = PickerType.Dropdown;
 
@@ -104,7 +102,7 @@ namespace Pickle.Editor
             }
             else if (pickerType == PickerType.Window)
             {
-                _objectPicker = new ObjectPickerWindowBuilder(_property.displayName, objectProvider, _configuration.Filter);
+                _objectPicker = new ObjectPickerWindowBuilder(property.displayName, objectProvider, _configuration.Filter);
             }
             else
             {
@@ -112,9 +110,9 @@ namespace Pickle.Editor
             }
         }
 
-        private void OpenObjectPicker()
+        private void OpenObjectPicker(SerializedProperty property)
         {
-            _objectPicker.Show(_objectFieldDrawer.FieldRect, _property.objectReferenceValue);
+            _objectPicker.Show(property, _objectFieldDrawer.FieldRect, property.objectReferenceValue);
         }
 
         public bool CheckObjectType(UnityEngine.Object obj)
