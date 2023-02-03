@@ -1,12 +1,15 @@
 ﻿using Pickle.ObjectProviders;
 using System;
 using UnityEngine;
+using UnityEditor;
 
 namespace Pickle.Editor
 {
     public class ObjectPickerWindowBuilder : IObjectPicker
     {
-        public event Action<UnityEngine.Object> OnOptionPicked;
+        public event Action<SerializedProperty, UnityEngine.Object> OnOptionPicked;
+
+        private SerializedProperty _property;
 
         private readonly string _title;
         private readonly IObjectProvider _lookupStrategy;
@@ -19,14 +22,15 @@ namespace Pickle.Editor
             _filter = filter;
         }
 
-        public void Show(Rect sourceRect, UnityEngine.Object selectedObject) 
+        public void Show(SerializedProperty property, Rect sourceRect, UnityEngine.Object selectedObject)
         {
+            _property = property;
             ObjectPickerWindow.OpenCustomPicker(_title, OnOptionPickedListener, _lookupStrategy, _filter, selectedObject);
         }
-    
+
         private void OnOptionPickedListener(UnityEngine.Object obj)
         {
-            OnOptionPicked?.Invoke(obj);
+            OnOptionPicked?.Invoke(_property, obj);
         }
     }
 }
