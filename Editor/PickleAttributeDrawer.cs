@@ -1,5 +1,4 @@
 ﻿using System;
-using UnityEditor.IMGUI.Controls;
 using UnityEditor;
 using UnityEngine;
 using Pickle.ObjectProviders;
@@ -7,110 +6,103 @@ using System.Collections;
 
 namespace Pickle.Editor
 {
+    public struct PickleFieldConfiguration
+    {
+        public IObjectProvider ObjectProvider;
+        public PickerType PickerType;
+        public AutoPickMode AutoPickMode;
+        public string EmptyFieldLabel;
+        public Predicate<ObjectTypePair> Filter;
+    }
+
+
 #if DEFAULT_TO_PICKLE
     [CustomPropertyDrawer(typeof(UnityEngine.Object), true)]
 #endif
     [CustomPropertyDrawer(typeof(PickleAttribute))]
     public class PickleAttributeDrawer : PropertyDrawer
     {
-        private const float AUTO_PICK_BUTTON_WIDTH = 20f;
-
-        private bool _isInitialized;
+        private PickleField _fieldDrawer;
         private bool _isValidField;
-        private Type _fieldType;
-        private ObjectFieldDrawer _objectFieldDrawer;
-        private IObjectPicker _objectPicker;
-        private SerializedProperty _property;
-        private Predicate<ObjectTypePair> _filter;
-        private AutoPickMode _autoPickMode;
 
         private void Initialize(SerializedProperty property)
         {
-            if (_isInitialized) return;
-            _isInitialized = true;
+            if (_fieldDrawer != null)
+                return;
 
-            _isValidField = property.propertyType == SerializedPropertyType.ObjectReference;
-        
-            if (_isValidField)
+            var fieldType = ExtractFieldType(fieldInfo);
+
+            _isValidField = fieldType != null;
+
+            var targetObject = property.serializedObject.targetObject;
+            var targetObjectType = targetObject.GetType();
+
+            var configuration = new PickleFieldConfiguration();
+            configuration.Filter = null;
+
+            configuration.PickerType = PickleSettings.GetDefaultPickerType(fieldType);
+
+            if (base.attribute != null)
             {
-                var targetObject = property.serializedObject.targetObject;
-                var targetObjectType = targetObject.GetType();
+                var attribute = (PickleAttribute)this.attribute;
 
-                // find the field type
-                _fieldType = ExtractFieldType(fieldInfo);
+                configuration = ExtractConfigurationFromAttribute(attribute, targetObject, targetObjectType, fieldType);
 
-                if (_fieldType == null)
+                if (attribute.CustomTypeName != null)
                 {
-                    _isValidField = false;
-                    return;
+                    configuration.EmptyFieldLabel = attribute.CustomTypeName;
                 }
-
-                _filter = null;
-
-                IObjectProvider objectProvider;
-                PickerType pickerType = PickleSettings.GetDefaultPickerType(_fieldType);
-
-                if (base.attribute != null)
+                else if (attribute.AdditionalTypeFilter != null)
                 {
-                    var attribute = (PickleAttribute)this.attribute;
-
-                    ExtractConfigurationFromAttribute(attribute, targetObject, targetObjectType, out objectProvider, out pickerType);
-
-                    if (attribute.CustomTypeName != null)
-                    {
-                        _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, attribute.CustomTypeName);
-                    }
-                    else if (attribute.AdditionalTypeFilter != null)
-                    {
-                        _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, $"{_fieldType.Name}: {attribute.AdditionalTypeFilter.Name}");
-                    }
-                    else
-                    {
-                        _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, _fieldType);
-                    }
+                    configuration.EmptyFieldLabel = $"{fieldType.Name}: {attribute.AdditionalTypeFilter.Name}";
                 }
                 else
                 {
-                    _objectFieldDrawer = new ObjectFieldDrawer(CheckObjectType, _fieldType);
-
-                    objectProvider = ObjectProviderUtilities.ResolveProviderTypeToProvider(PickleSettings.GetDefaultProviderType(), _fieldType, targetObject, true);
-                    _autoPickMode = PickleSettings.DefaultAutoPickMode;
-                    pickerType = PickleSettings.GetDefaultPickerType(_fieldType);
+                    configuration.EmptyFieldLabel = null;
                 }
-
-                InitializePickerPopup(objectProvider, pickerType);
-
-                _objectFieldDrawer.OnObjectPickerButtonClicked += OpenObjectPicker;
-                _objectPicker.OnOptionPicked += ChangeObject;
-            }
-        }
-
-        private void InitializePickerPopup(IObjectProvider objectProvider, PickerType pickerType)
-        {
-            if (pickerType == PickerType.Default) pickerType = PickerType.Dropdown;
-
-            if (pickerType == PickerType.Dropdown)
-            {
-                _objectPicker = new ObjectPickerDropdown(
-                    objectProvider,
-                    new AdvancedDropdownState(),
-                    _filter
-                );
-            }
-            else if (pickerType == PickerType.Window)
-            {
-                _objectPicker = new ObjectPickerWindowBuilder(_property.displayName, objectProvider, _filter);
             }
             else
             {
-                throw new System.NotImplementedException($"Picker type {pickerType} not implemented!");
+                configuration.EmptyFieldLabel = null;
+
+                configuration.ObjectProvider = ObjectProviderUtilities.ResolveProviderTypeToProvider(PickleSettings.GetDefaultProviderType(), fieldType, targetObject, true);
+                configuration.AutoPickMode = PickleSettings.DefaultAutoPickMode;
+                configuration.PickerType = PickleSettings.GetDefaultPickerType(fieldType);
             }
+
+            _fieldDrawer = new PickleField(
+                property,
+                fieldType,
+                configuration
+            );
         }
 
-        private void ExtractConfigurationFromAttribute(PickleAttribute attribute, UnityEngine.Object targetObject, Type targetObjectType, out IObjectProvider objectProvider, out PickerType pickerType)
+        private static Type ExtractFieldType(System.Reflection.FieldInfo fieldInfo)
         {
+            if (fieldInfo == null)
+                return null;
+
+            var fieldType = fieldInfo.FieldType;
+
+            if (fieldType.IsArray)
+                return fieldType.GetElementType();
+
+            if (typeof(IList).IsAssignableFrom(fieldType))
+                return fieldType.GetGenericArguments()[0];
+
+            return fieldType;
+        }
+
+        private static PickleFieldConfiguration ExtractConfigurationFromAttribute(
+            PickleAttribute attribute,
+            UnityEngine.Object targetObject,
+            Type targetObjectType,
+            Type fieldType)
+        {
+            var result = new PickleFieldConfiguration();
+
             var lookupType = attribute.LookupType == ObjectProviderType.Default ? PickleSettings.GetDefaultProviderType() : attribute.LookupType;
-            objectProvider = lookupType.ResolveProviderTypeToProvider(_fieldType, targetObject);
+            result.ObjectProvider = lookupType.ResolveProviderTypeToProvider(fieldType, targetObject);
 
             if (!string.IsNullOrEmpty(attribute.FilterMethodName))
             {
@@ -125,7 +117,7 @@ namespace Pickle.Editor
 
                     if (parameters.Length == 1 && parameters[0].ParameterType == typeof(ObjectTypePair))
                     {
-                        _filter = (Predicate<ObjectTypePair>)Delegate.CreateDelegate(typeof(Predicate<ObjectTypePair>), targetObject, filterMethodInfo);
+                        result.Filter = (Predicate<ObjectTypePair>)Delegate.CreateDelegate(typeof(Predicate<ObjectTypePair>), targetObject, filterMethodInfo);
                     }
                     else
                     {
@@ -140,85 +132,34 @@ namespace Pickle.Editor
 
             if (attribute.AdditionalTypeFilter != null)
             {
-                if (_filter == null)
+                if (result.Filter == null)
                 {
-                    _filter = (objectTypePair) => attribute.AdditionalTypeFilter.IsAssignableFrom(objectTypePair.Object.GetType());
+                    result.Filter = (objectTypePair) => attribute.AdditionalTypeFilter.IsAssignableFrom(objectTypePair.Object.GetType());
                 }
                 else
                 {
-                    var customFilter = _filter;
-                    _filter = (objectTypePair) => 
+                    var customFilter = result.Filter;
+                    result.Filter = (objectTypePair) =>
                         attribute.AdditionalTypeFilter.IsAssignableFrom(objectTypePair.Object.GetType())
                         && customFilter(objectTypePair);
                 }
             }
 
-            pickerType = attribute.PickerType == PickerType.Default ? PickleSettings.GetDefaultPickerType(_fieldType) : attribute.PickerType;
+            result.PickerType = attribute.PickerType == PickerType.Default ? PickleSettings.GetDefaultPickerType(fieldType) : attribute.PickerType;
 
-            // TODO :: CHECK IF VALID FOR BASE OBJECT
-            _autoPickMode = attribute.AutoPickMode == AutoPickMode.Default ? PickleSettings.DefaultAutoPickMode : attribute.AutoPickMode;
-        }
+            result.AutoPickMode = attribute.AutoPickMode == AutoPickMode.Default ? PickleSettings.DefaultAutoPickMode : attribute.AutoPickMode;
 
-        private Type ExtractFieldType(System.Reflection.FieldInfo fieldInfo)
-        {
-            if (fieldInfo == null)
-                return null;
-
-            var fieldType = fieldInfo.FieldType;
-
-            if (fieldType.IsArray)
-                return fieldType.GetElementType();
-            
-            if (typeof(IList).IsAssignableFrom(fieldType))
-                return fieldType.GetGenericArguments()[0];
-
-            return fieldInfo.FieldType;
-        }
-
-        private void ChangeObject(UnityEngine.Object obj)
-        {
-            if (obj == _property.objectReferenceValue)
-                return;
-
-            if (typeof(Component).IsAssignableFrom(_fieldType) && obj is GameObject go)
-            {
-                obj = go.GetComponent(_fieldType);
-            }
-
-            if (_property.objectReferenceValue != obj)
-            {
-                _property.objectReferenceValue = obj;
-                _property.serializedObject.ApplyModifiedProperties();
-            }
-        }
-
-        private void OpenObjectPicker()
-        {
-            _objectPicker.Show(_objectFieldDrawer.FieldRect, _property.objectReferenceValue);
-        }
-
-        private bool CheckObjectType(UnityEngine.Object obj)
-        {
-            if (typeof(Component).IsAssignableFrom(_fieldType) && obj is GameObject go)
-            {
-                if (!go.TryGetComponent(_fieldType, out var component))
-                    return false;
-
-                obj = component;
-            }
-
-            return _fieldType.IsAssignableFrom(obj.GetType()) && (_filter == null || _filter.Invoke(ObjectTypePair.EDITOR_ConstructPairFromObject(obj)));
+            return result;
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return EditorGUI.GetPropertyHeight(property, label);
+            Initialize(property);
+            return _fieldDrawer.GetPropertyHeight(property, label);
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            _property = property;
-
             Initialize(property);
 
             if (!_isValidField)
@@ -227,19 +168,7 @@ namespace Pickle.Editor
                 return;
             }
 
-            if (_autoPickMode != AutoPickMode.None)
-            {
-                var buttonRect = Rect.MinMaxRect(position.xMax - AUTO_PICK_BUTTON_WIDTH, position.yMin, position.xMax, position.yMax);
-                position.width -= AUTO_PICK_BUTTON_WIDTH;
-
-                if (GUI.Button(buttonRect, "A"))
-                {
-                    ChangeObject(_autoPickMode.DoAutoPick(_property.serializedObject.targetObject, _fieldType, _filter));
-                }
-            }
-
-            var newReference = _objectFieldDrawer.Draw(position, label, property.objectReferenceValue);
-            ChangeObject(newReference);
+            _fieldDrawer.OnGUI(position, property, label);
         }
     }
 }

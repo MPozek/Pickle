@@ -88,4 +88,8 @@ public Rigidbody ParentRigidbody;
 
 [Pickle(AutoPickMode = AutoPickMode.FindObject)]
 public Camera SceneCamera;
+
+// since version 1.2.0 you can add additional type filters to, for example, filter only interface implementers
+[Pickle(typeof(IMyInterface))]
+public UnityEngine.Object AnyObjectImplementingTheInterface;
 ```
