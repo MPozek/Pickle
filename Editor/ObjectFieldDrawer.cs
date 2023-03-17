@@ -6,7 +6,7 @@ namespace Pickle.Editor
 {
     public class ObjectFieldDrawer
     {
-        public event Action OnObjectPickerButtonClicked;
+        public event Action<SerializedProperty> OnObjectPickerButtonClicked;
         public readonly Predicate<UnityEngine.Object> IsObjectValidForField;
         private readonly Func<UnityEngine.Object, GUIContent> _objectLabelGetter;
 
@@ -37,6 +37,7 @@ namespace Pickle.Editor
 
         public UnityEngine.Object Draw(
             Rect position, GUIContent label,
+            SerializedProperty property,
             UnityEngine.Object activeObject)
         {
             var dropBoxRect = EditorGUI.PrefixLabel(position, label);
@@ -65,7 +66,7 @@ namespace Pickle.Editor
                             if (isMouseOverSelectButton)
                             {
                                 Event.current.Use();
-                                OnObjectPickerButtonClicked?.Invoke();
+                                OnObjectPickerButtonClicked?.Invoke(property);
                             }
                             else
                             {

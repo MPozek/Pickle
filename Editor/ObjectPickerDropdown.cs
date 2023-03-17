@@ -9,11 +9,13 @@ namespace Pickle.Editor
 {
     public class ObjectPickerDropdown : AdvancedDropdown, IObjectPicker
     {
-        public event Action<UnityEngine.Object> OnOptionPicked;
+        public event Action<SerializedProperty, UnityEngine.Object> OnOptionPicked;
 
         public string Title = "";
 
         private List<UnityEngine.Object> _objects = new List<UnityEngine.Object>();
+
+        private SerializedProperty _property;
 
         private readonly IObjectProvider _lookupStrategy;
         private readonly Predicate<ObjectTypePair> _filter;
@@ -28,8 +30,9 @@ namespace Pickle.Editor
             base.minimumSize = minSize;
         }
 
-        public void Show(Rect sourceRect, UnityEngine.Object _)
+        public void Show(SerializedProperty property, Rect sourceRect, UnityEngine.Object _)
         {
+            _property = property;
             Show(sourceRect);
         }
 
@@ -41,11 +44,11 @@ namespace Pickle.Editor
             {
                 if (item.id >= 0)
                 {
-                    OnOptionPicked?.Invoke(_objects[item.id]);
+                    OnOptionPicked?.Invoke(_property, _objects[item.id]);
                 }
                 else
                 {
-                    OnOptionPicked?.Invoke(null);
+                    OnOptionPicked?.Invoke(_property, null);
                 }
             }
         }
